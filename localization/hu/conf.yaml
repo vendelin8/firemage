@@ -1,0 +1,10 @@
+# Az alábbiak az alap gyorsbillentyűk, változtathatod őket. Ha bármelyikhez hozzárendelsz egy újat, a régi törlődik.
+# Megadhatsz többet is, akár a régit is, pl "F4: Frissít és "F5: Frissít".
+# A lehetséges gyorsbillentyűk listája itt érhető el: https://github.com/gdamore/tcell/blob/main/key.go#L83
+gyorsbillentyűk:
+  F2: Kereső
+  F3: Lista
+  F5: Frissít
+  F6: Ment
+  F8: Mégse
+  Esc: Kilép
