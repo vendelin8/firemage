@@ -80,11 +80,8 @@ func createGUI() *Frontend {
 	f.searchField = tview.NewInputField().SetFieldWidth(40)
 	f.searchFieldName = map[int]string{0: kEmail, 1: kName}
 	f.userTbl = tview.NewGrid()
-	f.pages = tview.NewPages().AddPage(kSearch, f.searchPage, true, false).
-		AddPage(kList, f.listPage, true, false)
-
 	f.menu = tview.NewTextView().SetDynamicColors(true).SetRegions(true).SetWrap(false)
-	initConf(func(shortcut, menuKey, text string, isPositive bool) {
+	initConf(func(menuKey, text, shortcut string, isPositive bool) {
 		var color string
 		switch {
 		case len(menuKey) > 0:
@@ -96,19 +93,15 @@ func createGUI() *Frontend {
 		}
 		fmt.Fprintf(f.menu, ` %s ["%s"][%s::b]%s[white::-][""]  `, shortcut, menuKey, color, text)
 	})
-	// fmt.Fprintf(f.menu, ` F2 ["%s"][yellow::b]%s[white::-][""]  `, kSearch, titles[kSearch])
-	// fmt.Fprintf(f.menu, ` F3 ["%s"][yellow::b]%s[white::-][""]  `, kList, titles[kList])
-	// fmt.Fprintf(f.menu, ` F5 [""][green::b]%s[white::-][""]  `, menuRefresh)
-	// fmt.Fprintf(f.menu, ` F6 [""][green::b]%s[white::-][""]  `, menuSave)
-	// fmt.Fprintf(f.menu, ` F8 [""][red::b]%s[white::-][""]  `, menuCancel)
-	// fmt.Fprintf(f.menu, ` Esc [""][red::b]%s[white::-][""]  `, menuQuit)
-	f.initSearch()
-	f.initList()
 	f.initUsersList()
 	return f
 }
 
 func (f *Frontend) run() {
+	f.initSearch()
+	f.initList()
+	f.pages = tview.NewPages().AddPage(kSearch, f.searchPage, true, false).
+		AddPage(kList, f.listPage, true, false)
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(f.header, 1, 0, false).
 		AddItem(f.pages, 0, 1, true).AddItem(f.menu, 1, 0, false)
 	f.app.SetInputCapture(cmdByKey)
