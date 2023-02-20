@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell"
-	"go.uber.org/zap"
 )
 
 func showList() {
@@ -23,7 +22,6 @@ func search(searchKey, searchValue string) {
 		return
 	}
 	if len(actions) > 0 {
-		lgr.Info("doSearch", zap.Reflect("actions", actions))
 		showWarningOnce(wSearchAgain)
 	}
 	crntUsers = crntUsers[:0]
@@ -117,7 +115,7 @@ func quit() {
 		fe.quit()
 		return
 	}
-	showConfirm(fmt.Sprintf(warnUnsaved, len(actions)), quit, nil)
+	showConfirm(fmt.Sprintf(warnUnsaved, len(actions)), fe.quit, nil)
 }
 
 // cmdByKey calls the adequate api function through a keyboard shortcut.

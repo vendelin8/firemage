@@ -37,6 +37,7 @@ func showWarningOnce(w int) {
 // showConfirm shows a confirm dialog with a text, and callback functions for OK and Cancel.
 func showConfirm(m string, okFunc, cancelFunc func()) {
 	activePopup = kCnfrm
+	fe.showConfirm(m, okFunc, cancelFunc)
 }
 
 // confirmDoneFunc returns a function that will call the given "OK" or "cancel" function
