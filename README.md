@@ -1,5 +1,3 @@
-# firemage is a CLI tool to manage Firebase Auth Claims, written in Golang
-
 ## Overview
 Let's assume you have a
 - Firebase project where you're managing users in Firebase Auth.
