@@ -27,6 +27,7 @@ type FeIf interface {
 	showMsg(m string)
 	showConfirm(m string, okFunc, cancelFunc func())
 	hidePopup()
+	layoutUsers()
 	quit()
 }
 
@@ -149,5 +150,4 @@ func (f *Frontend) setPage(newPage string) {
 	f.menu.Highlight(newPage).ScrollToHighlight()
 	f.pages.SwitchToPage(newPage)
 	f.header.SetText(fmt.Sprintf("%s - %s", mainTitle, titles[newPage]))
-	f.layoutUsers(newPage)
 }

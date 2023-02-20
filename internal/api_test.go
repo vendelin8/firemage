@@ -50,6 +50,7 @@ func (f *FrontFake) run()                                            {}
 func (f *FrontFake) showConfirm(m string, okFunc, cancelFunc func()) {}
 func (f *FrontFake) hidePopup()                                      {}
 func (f *FrontFake) setOnShow(string, func())                        {}
+func (f *FrontFake) layoutUsers()                                    {}
 
 func (f *FrontFake) setPage(newPage string) {
 	f.currPage = newPage

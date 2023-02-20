@@ -44,6 +44,7 @@ func cancel() {
 		return
 	}
 	actions = map[string]map[string]bool{}
+	fe.layoutUsers()
 }
 
 // refresh refreshes GUI and firestore cache from iterating all firebase auth users.
@@ -96,13 +97,13 @@ func showPage(newPage string) {
 				writeErrorStr(warnNoUsers)
 				writeErrorStr(warnMayRefresh)
 			}
-			showErrorsIf()
 		}
 	}
 	if len(actions) > 0 && newPage == kList {
 		showWarningOnce(wActionInList)
 	}
 	showErrorsIf()
+	fe.layoutUsers()
 }
 
 // hasPopup returns if there's an active popup window.

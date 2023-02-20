@@ -18,7 +18,7 @@ func (f *Frontend) initSearch() {
 	form := tview.NewForm().AddFormItem(f.searchRadio).AddFormItem(f.searchField)
 	form.AddButton(sDoSearch, func() {
 		search(f.searchFieldName[f.searchRadio.Value()], f.searchField.GetText())
-		f.layoutUsers(kSearch)
+		fe.layoutUsers()
 	})
 
 	f.setOnShow(kSearch, func() {

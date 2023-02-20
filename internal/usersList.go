@@ -77,7 +77,7 @@ func fixedUserClaims(uid string) (string, string, map[string]bool) {
 }
 
 // layoutUsers updates current users with their permisions as checkboxes.
-func (f *Frontend) layoutUsers(newPage string) {
+func (f *Frontend) layoutUsers() {
 	f.userTbl.ClearAfter(len(f.userHdrs))
 	rows := make([]int, len(crntUsers))
 	for i, uid := range crntUsers {
@@ -95,9 +95,7 @@ func (f *Frontend) layoutUsers(newPage string) {
 			f.userTbl.AddItem(tableCB(i, perm, claims), i+1, j+2, 1, 1, 0, 0, true)
 		}
 	}
-	if len(newPage) > 0 {
-		f.onShowPage[newPage]()
-	}
+	f.onShowPage[f.currentPage()]()
 	f.userTbl.SetRows(rows...)
 }
 
