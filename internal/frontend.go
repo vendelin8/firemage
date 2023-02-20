@@ -82,6 +82,11 @@ func createGUI() *Frontend {
 	f.searchFieldName = map[int]string{0: kEmail, 1: kName}
 	f.userTbl = tview.NewGrid()
 	f.menu = tview.NewTextView().SetDynamicColors(true).SetRegions(true).SetWrap(false)
+	f.initUsersList()
+	return f
+}
+
+func (f *Frontend) run() {
 	initConf(func(menuKey, text, shortcut string, isPositive bool) {
 		var color string
 		switch {
@@ -94,11 +99,6 @@ func createGUI() *Frontend {
 		}
 		fmt.Fprintf(f.menu, ` %s ["%s"][%s::b]%s[white::-][""]  `, shortcut, menuKey, color, text)
 	})
-	f.initUsersList()
-	return f
-}
-
-func (f *Frontend) run() {
 	f.initSearch()
 	f.initList()
 	f.pages = tview.NewPages().AddPage(kSearch, f.searchPage, true, false).
@@ -107,7 +107,9 @@ func (f *Frontend) run() {
 		AddItem(f.pages, 0, 1, true).AddItem(f.menu, 1, 0, false)
 	f.app.SetInputCapture(cmdByKey)
 	showPage(kSearch)
-	must("run app", f.app.SetRoot(layout, true).EnableMouse(true).Run())
+	f.app.SetRoot(layout, true).EnableMouse(true)
+	showErrorsIf()
+	must("run app", f.app.Run())
 }
 
 // showMsg shows the given message as a popup.

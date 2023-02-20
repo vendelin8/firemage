@@ -1,12 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"sort"
 
 	"github.com/gdamore/tcell"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -48,7 +50,6 @@ type menuItem struct {
 }
 
 // initConf initializes configurations, only keyboard shortcuts for now.
-// Shows any errors in GUI in case of an error.
 func initConf(menuCb func(menuKey, text, shortcut string, isPositive bool)) {
 	// loading config file
 	if len(confPath) == 0 {
@@ -56,10 +57,12 @@ func initConf(menuCb func(menuKey, text, shortcut string, isPositive bool)) {
 		return
 	}
 	fp, err := os.Open(confPath)
-	if err != nil {
-		showMsg(fmt.Sprintf(errConfPath, err.Error()))
+	if err == nil {
+		loadConf(menuCb, fp)
+		return
 	}
-	loadConf(menuCb, fp)
+	lgr.Error("opening config file", zap.Error(errors.New(fmt.Sprintf(errConfPath, err.Error()))))
+	loadConf(menuCb, nil)
 }
 
 // initConf initializes configurations, only keyboard shortcuts for now.
@@ -84,7 +87,6 @@ func loadConf(menuCb func(menuKey, text, shortcut string, isPositive bool), fp i
 			}
 			menuCb(m.menuKey, m.text, m.shortcut, m.positive)
 		}
-		showErrorsIf()
 	}()
 
 	if fp == nil {
@@ -93,7 +95,7 @@ func loadConf(menuCb func(menuKey, text, shortcut string, isPositive bool), fp i
 	d := yaml.NewDecoder(fp)
 	v := make(map[any]any)
 	if err := d.Decode(&v); err != nil {
-		showMsg(fmt.Sprintf(errConfParse, err.Error()))
+		writeErrorStr(fmt.Sprintf(errConfParse, err.Error()))
 		return
 	}
 
