@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell"
+	"go.uber.org/zap"
 )
 
 func showList() {
@@ -17,6 +18,7 @@ func showSearch() {
 // search looks for users in Firestore with email or name starting with given part.
 // Results are loaded into crntUsers uid string list.
 func search(searchKey, searchValue string) {
+	lgr.Info("searching for", zap.String("key", searchKey), zap.String("value", searchValue))
 	if len(searchValue) < minSearchLen {
 		fe.showMsg(fmt.Sprintf(errMinLen, minSearchLen))
 		return
@@ -37,6 +39,7 @@ func search(searchKey, searchValue string) {
 
 // cancel clears unsaved permission changes.
 func cancel() {
+	lgr.Info("cancel")
 	if len(actions) == 0 {
 		showMsg(sNoChanges)
 		return
@@ -47,6 +50,7 @@ func cancel() {
 
 // refresh refreshes GUI and firestore cache from iterating all firebase auth users.
 func refresh() {
+	lgr.Info("refresh")
 	if fe.currentPage() != kList {
 		showMsg(errCantRefresh)
 		return
@@ -66,6 +70,7 @@ func refresh() {
 
 // save saves user changes if any.
 func save() {
+	lgr.Info("save")
 	if len(actions) == 0 {
 		showMsg(sNoChanges)
 		return
@@ -78,6 +83,7 @@ func save() {
 
 // showPage shows the given page.
 func showPage(newPage string) {
+	lgr.Info("showPage", zap.String("newPage", newPage))
 	oldPage := fe.currentPage()
 	if newPage == oldPage {
 		return
@@ -111,6 +117,7 @@ func hasPopup() bool {
 
 // quit exists the application.
 func quit() {
+	lgr.Info("quit")
 	if len(actions) == 0 {
 		fe.quit()
 		return
