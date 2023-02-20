@@ -5,8 +5,7 @@ vars:
   CUSTOM: custom
   KEY: service-account.json
   CONF: conf.yaml
-  VERBOSE: false
-  EMULATOR: false
+  VERBOSE: -v
   MIN_COVERAGE: 60
 
 tasks:
@@ -44,7 +43,7 @@ tasks:
 
   debug:
     cmds:
-      - go run ./internal -k {{.KEY}} -c {{.CONF}} -v {{.VERBOSE}} -e {{.EMULATOR}}
+      - go run ./internal -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
 
   test:
     cmds:
