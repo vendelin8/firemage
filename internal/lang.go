@@ -1,1 +1,1 @@
-../localization/hu/lang.go
+../localization/en/lang.go
