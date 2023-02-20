@@ -20,11 +20,19 @@ tasks:
 
   build-lin:
     cmds:
-      - echo go build -o build/firemage ./internal
+      - GOOS=linux GOARCH=amd64 go build -o build/firemage ./internal
     sources:
       - internal/**/*.go
     generates:
       - build/firemage
+
+  build-osx:
+    cmds:
+      - GOOS=darwin GOARCH=amd64 go build -o build/firemage ./internal
+    sources:
+      - internal/**/*.go
+    generates:
+      - build/firemage.exe
 
   build-win:
     cmds:
@@ -36,10 +44,10 @@ tasks:
 
   build:
     cmds:
-      - task: build-lin
-        platforms: [linux/amd64]
-      - task: build-win
-        platforms: [windows/amd64]
+      - cmd: go build -o build/firemage ./internal
+        platforms: [linux, darwin]
+      - cmd: go build -o build/firemage.exe ./internal
+        platforms: [windows]
 
   debug:
     cmds:
