@@ -6,7 +6,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
