@@ -74,6 +74,16 @@ func copyClaims(src map[string]bool) map[string]bool {
 	return dst
 }
 
+// saveListBody is the middle of the firestore transaction for listing, saving and refreshing.
+// The input is a map of uid -> email users that come from the cached list of privileged users.
+// It looks for new privileged users in case of refresh only by iterating through all auth users.
+// On the other side, it checks all users from the cache list if they are still privileged for
+// all three cases. In case of refresh and save it checks if the permissions are still the same.
+// Not for listing, because it runs only at init when we download the list of permissions, so
+// there's nothing to compare them with. In case of save we're merging actions into current
+// permissions, updating Firebase auth claims and the cached firestore list of privileged users.
+//
+//nolint:all
 func saveListBody(act int, res map[string]any) []firestore.Update {
 	crntMap := map[string]struct{}{}
 	var changed, newUsers, empty []string
@@ -185,7 +195,7 @@ func saveListBody(act int, res map[string]any) []firestore.Update {
 	} else {
 		uidList := make([]auth.UserIdentifier, 0, len(uids))
 		for uid := range uids {
-			uidList = append(uidList, auth.UIDIdentifier{uid})
+			uidList = append(uidList, auth.UIDIdentifier{UID: uid})
 		}
 		if !fb.downloadClaims(uidList, claimCb) && manualChanges {
 			manualChanges = false // already written
