@@ -1,4 +1,6 @@
-[![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/SchwarzIT/go-template)
+## Firemage
+
+firemage is a CLI tool to manage Firebase Auth Claims, written in Golang
 
 The project uses `task` to make your life easier. If you're not familiar with Taskfiles you can take a look at [this quickstart guide](https://taskfile.dev/).
 
