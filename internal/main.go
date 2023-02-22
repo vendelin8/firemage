@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func init() {
 	rootCmd.Flags().BoolVarP(&useEmu, "emulator", "e", false, descEmul)
 }
 
-func main() {
+func Main() {
 	must("execute command", rootCmd.Execute())
 	if logSync := initLogger(); logSync != nil {
 		defer logSync()
@@ -37,9 +37,10 @@ func main() {
 	fb = NewFirebase()
 	fe = createGUI()
 	fe.run()
+	cancelF()
 }
 
-func initLogger() func() error {
+func initLogger() func() {
 	cfg := zap.NewDevelopmentConfig()
 	cfg.OutputPaths = []string{"log.txt"}
 	if !verbose {
@@ -49,12 +50,14 @@ func initLogger() func() error {
 	lgr, err = cfg.Build()
 	must("build logger", err)
 	zap.ReplaceGlobals(lgr)
-	return lgr.Sync
+	return func() {
+		must("log sync", lgr.Sync())
+	}
 }
 
 // must panics if the given error is not nil, with the given description. For initializations only.
 func must(descr string, err error) {
 	if err != nil {
-		panic(fmt.Errorf("%s: %v\n", descr, err))
+		panic(fmt.Errorf("%s: %w", descr, err))
 	}
 }

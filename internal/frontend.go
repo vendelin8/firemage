@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -7,10 +7,11 @@ import (
 )
 
 const (
-	kMsg    = "msg"
-	kCnfrm  = "confirm"
-	kSearch = "search"
-	kList   = "list"
+	msg         = "msg"
+	cnfrm       = "confirm"
+	srch        = "search"
+	lst         = "list"
+	searchWidth = 40
 )
 
 var (
@@ -78,8 +79,8 @@ func createGUI() *Frontend {
 	f.filler = tview.NewBox()
 	f.app = tview.NewApplication()
 	f.header = newText("")
-	f.searchField = tview.NewInputField().SetFieldWidth(40)
-	f.searchFieldName = map[int]string{0: kEmail, 1: kName}
+	f.searchField = tview.NewInputField().SetFieldWidth(searchWidth)
+	f.searchFieldName = map[int]string{0: email, 1: name}
 	f.userTbl = tview.NewGrid()
 	f.menu = tview.NewTextView().SetDynamicColors(true).SetRegions(true).SetWrap(false)
 	f.initUsersList()
@@ -101,12 +102,12 @@ func (f *Frontend) run() {
 	})
 	f.initSearch()
 	f.initList()
-	f.pages = tview.NewPages().AddPage(kSearch, f.searchPage, true, false).
-		AddPage(kList, f.listPage, true, false)
+	f.pages = tview.NewPages().AddPage(srch, f.searchPage, true, false).
+		AddPage(lst, f.listPage, true, false)
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(f.header, 1, 0, false).
 		AddItem(f.pages, 0, 1, true).AddItem(f.menu, 1, 0, false)
 	f.app.SetInputCapture(cmdByKey)
-	showPage(kSearch)
+	showPage(srch)
 	f.app.SetRoot(layout, true).EnableMouse(true)
 	showErrorsIf()
 	must("run app", f.app.Run())
@@ -115,7 +116,7 @@ func (f *Frontend) run() {
 // showMsg shows the given message as a popup.
 func (f *Frontend) showMsg(m string) {
 	if f.msg != nil {
-		f.pages.ShowPage(kMsg)
+		f.pages.ShowPage(msg)
 		f.msg.SetText(m)
 		return
 	}
@@ -124,14 +125,14 @@ func (f *Frontend) showMsg(m string) {
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			hidePopup()
 		})
-	f.pages.AddPage(kMsg, tview.NewCenter(f.msg, width, height), true, true)
+	f.pages.AddPage(msg, tview.NewCenter(f.msg, width, height), true, true)
 	f.msg.SetText(m)
 }
 
 // showConfirm shows a confirm dialog with a text, and callback functions for OK and Cancel.
 func (f *Frontend) showConfirm(m string, okFunc, cancelFunc func()) {
 	if f.confirm != nil {
-		f.pages.ShowPage(kCnfrm)
+		f.pages.ShowPage(cnfrm)
 		f.app.SetFocus(f.confirm.SetFocus(0))
 		f.confirm.SetText(m)
 		return
@@ -139,7 +140,7 @@ func (f *Frontend) showConfirm(m string, okFunc, cancelFunc func()) {
 	width, height := 50, 10 // TODO: resize based on text size
 	f.confirm = tview.NewModal().AddButtons([]string{sYes, sNo}).
 		SetDoneFunc(confirmDoneFunc(okFunc, cancelFunc))
-	f.pages.AddPage(kCnfrm, tview.NewCenter(f.confirm, width, height), true, true)
+	f.pages.AddPage(cnfrm, tview.NewCenter(f.confirm, width, height), true, true)
 	f.confirm.SetText(m)
 }
 

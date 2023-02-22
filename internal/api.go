@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -8,11 +8,11 @@ import (
 )
 
 func showList() {
-	showPage(kList)
+	showPage(lst)
 }
 
 func showSearch() {
-	showPage(kSearch)
+	showPage(srch)
 }
 
 // search looks for users in Firestore with email or name starting with given part.
@@ -51,7 +51,7 @@ func cancel() {
 // refresh refreshes GUI and firestore cache from iterating all firebase auth users.
 func refresh() {
 	lgr.Info("refresh")
-	if fe.currentPage() != kList {
+	if fe.currentPage() != lst {
 		showMsg(errCantRefresh)
 		return
 	}
@@ -95,7 +95,7 @@ func showPage(newPage string) {
 		crntUsers = us
 	} else {
 		crntUsers = []string{}
-		if newPage == kList {
+		if newPage == lst {
 			fb.saveList(actList)
 			if len(crntUsers) == 0 {
 				writeErrorStr(warnNoUsers)
@@ -103,7 +103,7 @@ func showPage(newPage string) {
 			}
 		}
 	}
-	if len(actions) > 0 && newPage == kList {
+	if len(actions) > 0 && newPage == lst {
 		showWarningOnce(wActionInList)
 	}
 	showErrorsIf()

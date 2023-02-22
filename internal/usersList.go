@@ -1,7 +1,12 @@
-package main
+package internal
 
 import (
 	"github.com/vendelin8/tview"
+)
+
+const (
+	namedCols       = 2 // name and email column
+	checkBoxPadding = 2
 )
 
 var (
@@ -10,17 +15,17 @@ var (
 )
 
 func (f *Frontend) initUsersList() {
-	colNum := len(kAllPerms) + 2
+	colNum := len(allPerms) + namedCols
 	f.userHdrs = make([]string, colNum)
 	f.userHdrs[0] = sName
 	f.userHdrs[1] = sEmail
 	colSizes := make([]int, colNum)
 	colSizes[0] = 25
 	colSizes[1] = 0 // fill
-	for i, perm := range kAllPerms {
-		j := i + 2
-		f.userHdrs[j] = kPermsMap[perm]
-		colSizes[j] = len(perm) + 2
+	for i, perm := range allPerms {
+		j := i + namedCols
+		f.userHdrs[j] = permsMap[perm]
+		colSizes[j] = len(perm) + checkBoxPadding
 	}
 	for col, text := range f.userHdrs {
 		f.userTbl.AddItem(newText(text), 0, col, 1, 1, 0, 0, false)
@@ -37,7 +42,7 @@ func tableCB(i int, key string, claims map[string]bool) tview.Primitive {
 	cb := tview.NewCheckbox().SetChangedFunc(func(checked bool) {
 		onActionChange(checked, i, key)
 	}).SetChecked(checked)
-	c := tview.NewCenter(cb, 3, 1)
+	c := tview.NewCenter(cb, cb.GetFieldWidth(), cb.GetFieldHeight())
 	if i%2 == 1 {
 		cb.SetBackgroundColor(tview.Styles.PrimaryTextColor)
 		cb.SetFieldTextColor(tview.Styles.PrimitiveBackgroundColor)
@@ -76,7 +81,7 @@ func fixedUserClaims(uid string) (string, string, map[string]bool) {
 	return u.Name, u.Email, claims
 }
 
-// layoutUsers updates current users with their permisions as checkboxes.
+// layoutUsers updates current users with their permissions as checkboxes.
 func (f *Frontend) layoutUsers() {
 	f.userTbl.ClearAfter(len(f.userHdrs))
 	rows := make([]int, len(crntUsers))
@@ -91,8 +96,8 @@ func (f *Frontend) layoutUsers() {
 			et.SetTextColor(tview.Styles.ContrastBackgroundColor)
 		}
 		f.userTbl.AddItem(nt, i+1, 0, 1, 1, 0, 0, false).AddItem(et, i+1, 1, 1, 1, 0, 0, false)
-		for j, perm := range kAllPerms {
-			f.userTbl.AddItem(tableCB(i, perm, claims), i+1, j+2, 1, 1, 0, 0, true)
+		for j, perm := range allPerms {
+			f.userTbl.AddItem(tableCB(i, perm, claims), i+1, j+namedCols, 1, 1, 0, 0, true)
 		}
 	}
 	f.onShowPage[f.currentPage()]()

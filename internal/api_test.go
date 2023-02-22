@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"errors"
@@ -13,17 +13,18 @@ import (
 )
 
 const (
-	someClaimKey = "someClaim"
-	someClaimVal = "claimVal"
-	errNetwork   = "Something didn't pass through"
+	someClaimKey  = "someClaim"
+	someClaimVal  = "claimVal"
+	errNetworkStr = "Something didn't pass through"
 )
 
 var (
-	fire  *FireFake
-	front *FrontFake
-	perm0 = "admin"
-	perm1 = "consultant"
-	wrnCp map[int]string
+	fire       *FireFake
+	front      *FrontFake
+	perm0      = "admin"
+	perm1      = "consultant"
+	wrnCp      map[int]string
+	errNetwork = errors.New(errNetworkStr)
 )
 
 func init() {
@@ -99,14 +100,14 @@ func (f *FireFake) networkOK() error {
 	ok := f.netErr != 1
 	f.netErr--
 	if !ok {
-		return errors.New(errNetwork)
+		return errNetwork
 	}
 	return nil
 }
 
 func (f *FireFake) searchFor(key, value string, cb func(newUser string)) {
 	var cmp func(*auth.UserRecord) bool
-	if key == kEmail {
+	if key == email {
 		cmp = func(r *auth.UserRecord) bool {
 			return strings.HasPrefix(r.Email, value)
 		}
@@ -121,7 +122,6 @@ func (f *FireFake) searchFor(key, value string, cb func(newUser string)) {
 			cb(r.UID)
 		}
 	}
-	return
 }
 
 func (f *FireFake) setClaims(uid string, newClaims map[string]any) error {
@@ -136,7 +136,7 @@ func (f *FireFake) downloadClaims(uids []auth.UserIdentifier, cb func(*auth.User
 	if !writeErrorIf(f.networkOK()) {
 		return false
 	}
-	var missing []string
+	missing := []string{}
 	for _, u := range uids {
 		uid := u.(auth.UIDIdentifier).UID
 		if u, ok := f.users[uid]; ok {
@@ -176,11 +176,11 @@ func setup() func() {
 	fb = fire
 	front = &FrontFake{}
 	fe = front
-	kPermsMap = map[string]string{
+	permsMap = map[string]string{
 		perm0: "Admin",
 		perm1: "Consultant",
 	}
-	kAllPerms = []string{perm0, perm1}
+	allPerms = []string{perm0, perm1}
 
 	return func() {
 		logSync()
@@ -270,14 +270,14 @@ func TestSearch(t *testing.T) {
 	}{
 		{
 			name:  "not found",
-			key:   kEmail,
+			key:   email,
 			value: "notfound",
 			users: []*User{userA, userA2, userB, userE, userE2},
 			errs:  []string{warnNoUsers},
 		},
 		{
 			name:  "too short input",
-			key:   kEmail,
+			key:   email,
 			value: "a",
 			users: []*User{userA, userA2, userB, userE, userE2},
 			preF: func() {
@@ -289,7 +289,7 @@ func TestSearch(t *testing.T) {
 		},
 		{
 			name:  "found A by email",
-			key:   kEmail,
+			key:   email,
 			value: "a@b",
 			users: []*User{userA, userA2, userB, userE, userE2},
 			want:  []*User{userA},
@@ -297,7 +297,7 @@ func TestSearch(t *testing.T) {
 		},
 		{
 			name:  "found A-s by name",
-			key:   kName,
+			key:   name,
 			value: "Aaa",
 			users: []*User{userA, userA2, userB, userE, userE2},
 			want:  []*User{userA, userA2},
@@ -394,7 +394,7 @@ func TestSaveCancel(t *testing.T) {
 				actions[userA.UID] = map[string]bool{perm0: false}
 				showSearch()
 				wantErr := wrnCp[wSearchAgain]
-				search(kEmail, "f@b")
+				search(email, "f@b")
 				checkMsg(t, "search", wantErr)
 				refresh()
 				checkMsg(t, "can't refresh on search", errCantRefresh)
@@ -408,7 +408,7 @@ func TestSaveCancel(t *testing.T) {
 		{
 			name: "save_partial_fail",
 			check: func() {
-				checkSave(2, errNetwork)
+				checkSave(2, errNetworkStr)
 				if len(actions) != 1 {
 					t.Errorf("action should be 1 but it's %d: %#v", len(actions), actions)
 				}
@@ -560,6 +560,42 @@ func TestRefresh(t *testing.T) {
 	}
 }
 
+type apiTestCase struct {
+	name   string
+	pre    func()
+	post   func()
+	cmd    int
+	key    tcell.Key
+	wErr   []string
+	keep   bool
+	noHide bool
+}
+
+func checkAPI(t *testing.T, c apiTestCase) {
+	if c.pre != nil {
+		c.pre()
+	}
+	key := c.key
+	if key == 0 {
+		key = menuItems[c.cmd].keys[0]
+	}
+	event := tcell.NewEventKey(key, 0, 0)
+	res := cmdByKey(event)
+	checkMsg(t, "pressing menu shortcut", c.wErr...)
+	if (res == nil) == c.keep {
+		if c.keep {
+			t.Fatal("key should have NOT been consumed but it was")
+		}
+		t.Fatal("key should have been consumed but it wasn't")
+	}
+	if c.post != nil {
+		c.post()
+	}
+	if !c.noHide {
+		hidePopup()
+	}
+}
+
 // TestApi tests all api functions through keyboard shortcuts
 func TestApi(t *testing.T) {
 	defer setup()()
@@ -568,16 +604,7 @@ func TestApi(t *testing.T) {
 		shortcuts = map[tcell.Key]int{}
 	}()
 
-	cases := []struct {
-		name   string
-		pre    func()
-		post   func()
-		cmd    int
-		key    tcell.Key
-		wErr   []string
-		keep   bool
-		noHide bool
-	}{
+	cases := []apiTestCase{
 		{
 			name: "initial_list",
 			pre: func() {
@@ -650,7 +677,7 @@ func TestApi(t *testing.T) {
 			cmd:  cmdSearch,
 		},
 		{
-			name: "quit_can't_beacuse_actions",
+			name: "quit_can't_because_actions",
 			pre: func() {
 				if front.stopped {
 					t.Fatal("should NOT have been stopped but was")
@@ -683,28 +710,7 @@ func TestApi(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if c.pre != nil {
-				c.pre()
-			}
-			key := c.key
-			if key == 0 {
-				key = menuItems[c.cmd].keys[0]
-			}
-			event := tcell.NewEventKey(key, 0, 0)
-			res := cmdByKey(event)
-			checkMsg(t, "pressing menu shortcut", c.wErr...)
-			if (res == nil) == c.keep {
-				if c.keep {
-					t.Fatal("key should have NOT been consumed but it was")
-				}
-				t.Fatal("key should have been consumed but it wasn't")
-			}
-			if c.post != nil {
-				c.post()
-			}
-			if !c.noHide {
-				hidePopup()
-			}
+			checkAPI(t, c)
 		})
 	}
 }

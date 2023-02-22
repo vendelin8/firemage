@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"context"
@@ -25,8 +25,9 @@ const (
 )
 
 var (
-	es = struct{}{} // empty struct
-	fb FbIf
+	es      = struct{}{} // empty struct
+	fb      FbIf
+	cancelF context.CancelFunc
 )
 
 // FbIf is an interface to be able to mock Firebase functionality.
@@ -89,7 +90,7 @@ func (f *Firebase) searchFor(key, value string, cb func(uid string)) {
 			cb(uid)
 			continue
 		}
-		uids = append(uids, auth.UIDIdentifier{uid})
+		uids = append(uids, auth.UIDIdentifier{UID: uid})
 	}
 	if len(uids) > 0 {
 		f.downloadClaims(uids, func(r *auth.UserRecord) {
@@ -185,6 +186,7 @@ func (f *Firebase) saveList(act int) {
 }
 
 func getCtx() context.Context {
-	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	var ctx context.Context
+	ctx, cancelF = context.WithTimeout(context.Background(), timeout)
 	return ctx
 }

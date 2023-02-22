@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ var (
 
 // showMsg shows the given message to the user, based on current frontend.
 func showMsg(m string) {
-	activePopup = kMsg
+	activePopup = msg
 	fe.showMsg(m)
 }
 
@@ -36,7 +36,7 @@ func showWarningOnce(w int) {
 
 // showConfirm shows a confirm dialog with a text, and callback functions for OK and Cancel.
 func showConfirm(m string, okFunc, cancelFunc func()) {
-	activePopup = kCnfrm
+	activePopup = cnfrm
 	fe.showConfirm(m, okFunc, cancelFunc)
 }
 

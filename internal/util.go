@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"sort"
@@ -27,7 +27,7 @@ type User struct {
 func filterClaims(c map[string]any) map[string]bool {
 	perms := map[string]bool{}
 	for p, v := range c {
-		if _, ok := kPermsMap[p]; ok {
+		if _, ok := permsMap[p]; ok {
 			perms[p] = v.(bool)
 		}
 	}
@@ -93,10 +93,10 @@ func saveListBody(act int, res map[string]any) []firestore.Update {
 			uids[uid] = es
 		}
 	}
-	if fe.currentPage() == kList {
-		savedUsers[kList] = crntUsers
+	if fe.currentPage() == lst {
+		savedUsers[lst] = crntUsers
 	}
-	for _, uid := range savedUsers[kList] { // already downloaded users
+	for _, uid := range savedUsers[lst] { // already downloaded users
 		crntMap[uid] = es
 		if act == actRefresh {
 			continue
@@ -191,13 +191,13 @@ func saveListBody(act int, res map[string]any) []firestore.Update {
 			manualChanges = false // already written
 		}
 	}
-	savedUsers[kList] = savedUsers[kList][:0]
+	savedUsers[lst] = savedUsers[lst][:0]
 	for uid := range res {
-		savedUsers[kList] = append(savedUsers[kList], uid)
+		savedUsers[lst] = append(savedUsers[lst], uid)
 	}
-	sortByNameThenEmail(savedUsers[kList])
-	if fe.currentPage() == kList {
-		crntUsers = savedUsers[kList]
+	sortByNameThenEmail(savedUsers[lst])
+	if fe.currentPage() == lst {
+		crntUsers = savedUsers[lst]
 	}
 	writeErrorList(errChanged, changed)
 	writeErrorList(errEmpty, empty)
@@ -217,10 +217,7 @@ func sortByNameThenEmail(x []string) {
 		uiz := len(ui.Name) == 0
 		ujz := len(uj.Name) == 0
 		if uiz != ujz {
-			if uiz {
-				return false
-			}
-			return true
+			return !uiz
 		}
 		if ui.Name < uj.Name {
 			return true

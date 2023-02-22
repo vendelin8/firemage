@@ -1,7 +1,6 @@
-package main
+package internal
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -28,13 +27,12 @@ var (
 	shortcuts = map[tcell.Key]int{}
 	// menuItems are the default menu items.
 	menuItems = map[int]*menuItem{
-		cmdCancel:  &menuItem{"F8", []tcell.Key{tcell.KeyF8}, "", menuCancel, false, true, cancel},
-		cmdRefresh: &menuItem{"F5", []tcell.Key{tcell.KeyF5}, "", menuRefresh, true, true, refresh},
-		cmdSearch: &menuItem{"F2", []tcell.Key{tcell.KeyF2}, kSearch, titles[kSearch],
-			false, true, showSearch},
-		cmdList: &menuItem{"F3", []tcell.Key{tcell.KeyF3}, kList, titles[kList], false, true, showList},
-		cmdSave: &menuItem{"F6", []tcell.Key{tcell.KeyF6}, "", menuSave, true, true, save},
-		cmdQuit: &menuItem{"Esc", []tcell.Key{tcell.KeyEsc}, "", menuQuit, false, true, quit},
+		cmdCancel:  {"F8", []tcell.Key{tcell.KeyF8}, "", menuCancel, false, true, cancel},
+		cmdRefresh: {"F5", []tcell.Key{tcell.KeyF5}, "", menuRefresh, true, true, refresh},
+		cmdSearch:  {"F2", []tcell.Key{tcell.KeyF2}, srch, titles[srch], false, true, showSearch},
+		cmdList:    {"F3", []tcell.Key{tcell.KeyF3}, lst, titles[lst], false, true, showList},
+		cmdSave:    {"F6", []tcell.Key{tcell.KeyF6}, "", menuSave, true, true, save},
+		cmdQuit:    {"Esc", []tcell.Key{tcell.KeyEsc}, "", menuQuit, false, true, quit},
 	}
 )
 
@@ -61,47 +59,17 @@ func initConf(menuCb func(menuKey, text, shortcut string, isPositive bool)) {
 		loadConf(menuCb, fp)
 		return
 	}
-	lgr.Error("opening config file", zap.Error(errors.New(fmt.Sprintf(errConfPath, err.Error()))))
+	lgr.Error(errConfPath, zap.Error(err))
 	loadConf(menuCb, nil)
 }
 
 // initConf initializes configurations, only keyboard shortcuts for now.
 // Shows any errors in GUI in case of an error.
 func loadConf(menuCb func(menuKey, text, shortcut string, isPositive bool), fp io.Reader) {
-	defer func() {
-		for i := cmdStart + 1; i < cmdEnd; i++ {
-			m := menuItems[i]
-			if m.isDef {
-				shortcuts[m.keys[0]] = i
-				menuCb(m.menuKey, m.text, m.shortcut, m.positive)
-				continue
-			}
-			sort.Slice(m.keys, func(i, j int) bool {
-				return m.keys[i] < m.keys[j]
-			})
-			m.shortcut = tcell.KeyNames[m.keys[0]]
-			shortcuts[m.keys[0]] = i
-			for _, key := range m.keys[1:] {
-				shortcuts[key] = i
-				m.shortcut = fmt.Sprintf("%s; %s", m.shortcut, tcell.KeyNames[key])
-			}
-			menuCb(m.menuKey, m.text, m.shortcut, m.positive)
-		}
-	}()
+	defer saveShortcuts(menuCb)
 
-	if fp == nil {
-		return
-	}
-	d := yaml.NewDecoder(fp)
-	v := make(map[any]any)
-	if err := d.Decode(&v); err != nil {
-		writeErrorStr(fmt.Sprintf(errConfParse, err.Error()))
-		return
-	}
-
-	// loading keyboard shortcuts from config file
-	kc, ok := v[cShortcuts].(map[string]any)
-	if !ok || len(kc) == 0 {
+	kc := loadYamlConf(fp)
+	if len(kc) == 0 {
 		return
 	}
 
@@ -139,4 +107,44 @@ func loadConf(menuCb func(menuKey, text, shortcut string, isPositive bool), fp i
 		writeErrorList(errKeyNotFound, notFoundKeys)
 	}
 	writeErrorMap(errCmdNotFound, notFound)
+}
+
+func loadYamlConf(fp io.Reader) map[string]any {
+	if fp == nil {
+		return nil
+	}
+	d := yaml.NewDecoder(fp)
+	v := make(map[any]any)
+	if err := d.Decode(&v); err != nil {
+		writeErrorStr(fmt.Sprintf(errConfParse, err.Error()))
+		return nil
+	}
+
+	// loading keyboard shortcuts from config file
+	kc, ok := v[cShortcuts].(map[string]any)
+	if !ok {
+		return nil
+	}
+	return kc
+}
+
+func saveShortcuts(menuCb func(menuKey, text, shortcut string, isPositive bool)) {
+	for i := cmdStart + 1; i < cmdEnd; i++ {
+		m := menuItems[i]
+		if m.isDef {
+			shortcuts[m.keys[0]] = i
+			menuCb(m.menuKey, m.text, m.shortcut, m.positive)
+			continue
+		}
+		sort.Slice(m.keys, func(i, j int) bool {
+			return m.keys[i] < m.keys[j]
+		})
+		m.shortcut = tcell.KeyNames[m.keys[0]]
+		shortcuts[m.keys[0]] = i
+		for _, key := range m.keys[1:] {
+			shortcuts[key] = i
+			m.shortcut = fmt.Sprintf("%s; %s", m.shortcut, tcell.KeyNames[key])
+		}
+		menuCb(m.menuKey, m.text, m.shortcut, m.positive)
+	}
 }

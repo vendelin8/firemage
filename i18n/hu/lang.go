@@ -1,4 +1,4 @@
-package main
+package internal
 
 const (
 	menuRefresh    = "Frissít"
@@ -32,14 +32,14 @@ const (
 	errEmpty       = "Neki(k) megszűntek a jogosultságai(k): %s ."
 	errTimeout     = "Adatabázis időkorlát túllépés."
 	errRemoved     = "Az alábbiak törlődtek a rendszerből: %s ."
-	errConfPath    = "Nincs meg a beállítás fájl, ellenőrizd a program paramétereit: %s ."
+	errConfPath    = "Nincs meg a beállítás fájl, ellenőrizd a program paramétereit."
 	errConfParse   = "Beállítás fájl hibás: %s ."
 	errCmdNotFound = "Hiányzó gyorsbillentyű parancs(ok): %s ."
 	errKeyNotFound = "Hiányzó gyorsbillentyű(k): %s ."
 )
 
 var (
-	titles = map[string]string{kSearch: "Kereső", kList: "Lista"}
+	titles = map[string]string{srch: "Kereső", lst: "Lista"}
 	warns  = map[int]string{
 		wSearchAgain:  "A változtatásaid megmaradnak az előző keresésből. Ha mégse szeretnéd őket, nyomj a Mégse gombra.",
 		wActionInList: "A korábbi változásaid megmaradnak. Ha a keresésnél hozzáadtál valakit, itt csak mentés után fogod látni.",

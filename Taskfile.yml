@@ -2,61 +2,94 @@ version: '3'
 
 vars:
   LANG: en
-  CUSTOM: custom
   KEY: service-account.json
   CONF: conf.yaml
   VERBOSE: -v
   MIN_COVERAGE: 60
+  GOLANGCI_VERSION: 1.51.2
+
 
 tasks:
-  setlang:
-    cmds: # TODO: how shoild we handle windows?
-      - ln -sf ../localization/"{{.LANG}}"/lang.go internal/
-      - ln -sf localization/"{{.LANG}}"/conf.yaml ./
+  help:
+    cmds:
+      - go run . -h
 
-  setcustom:
-    cmds: # TODO: how shoild we handle windows?
-      - ln -sf ../customization/"{{.CUSTOM}}".go internal/custom.go
+  setlang:
+    cmds: # TODO: how should we handle windows?
+      - ln -sf ../i18n/"{{.LANG}}"/lang.go internal/
+      - ln -sf i18n/"{{.LANG}}"/conf.yaml ./
+
+  deps:
+    cmds:
+      - go get ./internal/...
+
+  golanci-lint:
+    cmds:
+      - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b .bin v{{.GOLANGCI_VERSION}}
+      - mv .bin/golangci-lint .bin/golangci-lint-{{.GOLANGCI_VERSION}}
+    generates:
+      - .bin/golangci-lint-{{.GOLANGCI_VERSION}}
+    status:
+      - test -f .bin/golangci-lint-{{.GOLANGCI_VERSION}}
+
+  lint:
+    deps: [golanci-lint]
+    cmds:
+        - .bin/golangci-lint-{{.GOLANGCI_VERSION}} run --skip-dirs "i18n|custom"
+
+  lint-reports:
+    generates:
+      - out/lint.xml
 
   build-lin:
+    deps: [deps]
     cmds:
-      - GOOS=linux GOARCH=amd64 go build -o build/firemage ./internal
+      - GOOS=linux GOARCH=amd64 go out -o out/firemage .
     sources:
-      - internal/**/*.go
+      - ./**/*.go
     generates:
-      - build/firemage
+      - out/firemage
 
   build-osx:
+    deps: [deps]
     cmds:
-      - GOOS=darwin GOARCH=amd64 go build -o build/firemage ./internal
+      - GOOS=darwin GOARCH=amd64 go out -o out/firemage .
     sources:
-      - internal/**/*.go
+      - ./**/*.go
     generates:
-      - build/firemage.exe
+      - out/firemage.exe
 
   build-win:
+    deps: [deps]
     cmds:
-      - GOOS=windows GOARCH=amd64 go build -o build/firemage.exe ./internal
+      - GOOS=windows GOARCH=amd64 go out -o out/firemage.exe .
     sources:
-      - internal/**/*.go
+      - ./**/*.go
     generates:
-      - build/firemage.exe
+      - out/firemage.exe
 
   build:
+    deps: [deps]
     cmds:
-      - cmd: go build -o build/firemage ./internal
+      - cmd: go build -o out/firemage .
         platforms: [linux, darwin]
-      - cmd: go build -o build/firemage.exe ./internal
+        generates:
+          - out/firemage
+      - cmd: go build -o out/firemage.exe .
         platforms: [windows]
+        generates:
+          - out/firemage.exe
 
   debug:
+    deps: [deps]
     cmds:
-      - go run ./internal -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
+      - go run . -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
 
   test:
+    deps: [deps]
     cmds:
       - echo "testing .."
-      - go test -coverprofile c.cov.tmp -covermode=count ./internal/... -v -p 1 -vet off
+      - go test -coverprofile c.cov.tmp -covermode=count ./internal/... -v -p 1
       - cat c.cov.tmp | rg -ve "(colfer\.go)|(tpltc\.go)" > c.cov
       - rm c.cov.tmp
       - go tool cover -func c.cov | grep total | awk '{cov=substr($3, 1, length($3)-1)+0.0; print cov}' > coverage.txt
@@ -65,4 +98,3 @@ tasks:
   cover:
     cmds:
       - go tool cover -o cov.html -html=c.cov; sed -i 's/black/whitesmoke/g' cov.html; chromium cov.html
-

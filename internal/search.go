@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	kName  = "name"
-	kEmail = "email"
+	name        = "name"
+	email       = "email"
+	formPadding = 3 // top+button+bottom
 )
 
 func (f *Frontend) initSearch() {
@@ -21,10 +22,15 @@ func (f *Frontend) initSearch() {
 		fe.layoutUsers()
 	})
 
-	f.setOnShow(kSearch, func() {
+	f.setOnShow(srch, func() {
 		f.searchPage.ResizeItemAt(1, len(crntUsers)+1, 0)
 	})
-	f.searchPage = tview.NewFlex().SetDirection(tview.FlexRow).AddItem(form, 7, 0, true).
+	h := formPadding
+	for i := 0; i < form.GetFormItemCount(); i++ {
+		h += form.GetFormItem(i).GetFieldHeight()
+		h++
+	}
+	f.searchPage = tview.NewFlex().SetDirection(tview.FlexRow).AddItem(form, h, 0, true).
 		AddItem(f.userTbl, 1, 0, true).AddItem(f.filler, 0, 1, false)
 }
 
