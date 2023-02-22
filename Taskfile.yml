@@ -90,7 +90,7 @@ tasks:
     cmds:
       - echo "testing .."
       - go test -coverprofile c.cov.tmp -covermode=count ./internal/... -v -p 1
-      - cat c.cov.tmp | rg -ve "(colfer\.go)|(tpltc\.go)" > c.cov
+      - cat c.cov.tmp | grep -ve "(colfer\.go)|(tpltc\.go)" > c.cov
       - rm c.cov.tmp
       - go tool cover -func c.cov | grep total | awk '{cov=substr($3, 1, length($3)-1)+0.0; print cov}' > coverage.txt
       - cat coverage.txt | awk '{min_cov={{.MIN_COVERAGE}} + 0;cov=$1;print "COVERAGE " cov " ?>= " min_cov; if (cov < min_cov) {print "Low COVERAGE cov < min_cov"; exit 1};print "Good coverage >= " min_cov}'

@@ -5,7 +5,7 @@ go 1.20
 require (
 	cloud.google.com/go/firestore v1.9.0
 	firebase.google.com/go v3.13.0+incompatible
-	github.com/gdamore/tcell v1.4.0
+	github.com/gdamore/tcell/v2 v2.5.3
 	github.com/spf13/cobra v1.6.1
 	github.com/vendelin8/tview v0.0.0-20230219154510-0be65795b3d9
 	go.uber.org/zap v1.24.0
@@ -21,7 +21,6 @@ require (
 	cloud.google.com/go/longrunning v0.3.0 // indirect
 	cloud.google.com/go/storage v1.27.0 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
-	github.com/gdamore/tcell/v2 v2.5.3 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
