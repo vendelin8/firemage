@@ -65,10 +65,14 @@ jobs:
           task test
           go tool cover -func=coverage.out -o=coverage.out
 
+      - name: Go report
+        uses: creekorful/goreportcard-action@v1.0
+
       - name: Go Coverage Badge  # Pass the `coverage.out` output to this action
         uses: tj-actions/coverage-badge-go@v2
         with:
           filename: coverage.out
+          green: 60
 
       - name: Verify Changed files
         uses: tj-actions/verify-changed-files@v12
