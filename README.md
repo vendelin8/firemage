@@ -28,8 +28,8 @@ go get github.com/vendelin8/firemage
 ```
 
 1. Go to https://console.cloud.google.com/iam-admin/serviceaccounts?project=YOUR_PROJECT_ID to create a service account key, and download it somewhere inside `$GOPATH/src/github.com/vendelin8/firemage` folder. The default path is `service-account.json`, change it in `Taskfile` if you want it otherwise.
-1. Fill in `customization/custom.go` with your details.
-1. The default is English (`LANG`=`en`). If you want to change it to your language, and you can find it in `localization` folder, call:
+1. Fill in `custom/custom.go` with your details.
+1. The default is English (`LANG`=`en`). If you want to change it to your language, and you can find it in `i18n` folder, call:
 
 ```bash
 task setlang <LANG>
@@ -58,7 +58,13 @@ To print debug info to `log.txt` add `-v`.
 To use it with a configured FIrebase emulator add `-e`.
 
 ## Build
-You can compile with `task build` or cross compile to multiple platforms with `task build-win`, `task build-osx` or `task build-lin`. It will output to `build` folder. It compiles `customization/custom.go` options and chosen language. You can ship with the compiled version to a teammate. Add `service-account.json` in the same folder and optionally `conf.yaml` to be able to configure keyboard shortcuts.
+You can compile with
+
+```bash
+task build
+```
+
+or cross compile to multiple platforms with `task build-win`, `task build-osx` or `task build-lin`. It will output to `build` folder. It compiles `custom/custom.go` options and chosen language. You can ship with the compiled version to a teammate. Add `service-account.json` in the same folder and optionally `conf.yaml` to be able to configure keyboard shortcuts.
 
 ## How Firestore caching works
 The first `Refresh` call will create a collection `misc` with a document `specialUsers`. It will have all privileged users as `uid` -> `email` pairs as data. When you open the `List` page in the app, it will download this list, and get the permissions from Firebase Auth claims. By removing permissions and calling `Save` users may be removed from the cache list. By searching for email or name, adding permissions to other users and calling `Save`, users may be added to the cache list.
