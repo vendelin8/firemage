@@ -255,7 +255,7 @@ func checkList(t *testing.T, errs ...string) {
 	checkMsg(t, "list", errs...)
 }
 
-// TestSearch searches test functionality.
+// TestSearch tests search functionality.
 func TestSearch(t *testing.T) {
 	defer setup()()
 
