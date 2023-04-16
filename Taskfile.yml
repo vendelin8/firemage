@@ -85,6 +85,15 @@ tasks:
     cmds:
       - go run . -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
 
+  install:
+    deps: [deps]
+    cmds:
+      - cmd: go install .
+
+  run:
+    cmds:
+      - firemage -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
+
   test:
     deps: [deps]
     cmds:
