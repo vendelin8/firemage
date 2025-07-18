@@ -10,20 +10,30 @@ vars:
 
 
 tasks:
+  default:
+    desc: Shows a help menu with all available commands and their descriptions.
+    cmd: task -l
+
   help:
-    cmds:
-      - go run . -h
+    desc: Helps with app commands.
+    cmd: go run . -h
 
   setlang:
+    desc: Sets language.
+    requires:
+      vars:
+        - name: LANG
+          enum: [hu, en]
     cmds: # TODO: how should we handle windows?
       - ln -sf ../i18n/"{{.LANG}}"/lang.go internal/
       - ln -sf i18n/"{{.LANG}}"/conf.yaml ./
 
   deps:
-    cmds:
-      - go get ./internal/...
+    internal: true
+    cmd: go get ./internal/...
 
   golanci-lint:
+    internal: true
     cmds:
       - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b .bin v{{.GOLANGCI_VERSION}}
       - mv .bin/golangci-lint .bin/golangci-lint-{{.GOLANGCI_VERSION}}
@@ -33,36 +43,32 @@ tasks:
       - test -f .bin/golangci-lint-{{.GOLANGCI_VERSION}}
 
   lint:
+    desc: Runs linter on the code.
     deps: [golanci-lint]
-    cmds:
-        - .bin/golangci-lint-{{.GOLANGCI_VERSION}} run --skip-dirs "i18n|custom"
-
-  lint-reports:
-    generates:
-      - out/lint.xml
+    cmd: .bin/golangci-lint-{{.GOLANGCI_VERSION}} run --skip-dirs "i18n|custom"
 
   build-lin:
+    internal: true
     deps: [deps]
-    cmds:
-      - GOOS=linux GOARCH=amd64 go out -o out/firemage .
+    cmd: GOOS=linux GOARCH=amd64 go out -o out/firemage .
     sources:
       - ./**/*.go
     generates:
       - out/firemage
 
   build-osx:
+    internal: true
     deps: [deps]
-    cmds:
-      - GOOS=darwin GOARCH=amd64 go out -o out/firemage .
+    cmd: GOOS=darwin GOARCH=amd64 go out -o out/firemage .
     sources:
       - ./**/*.go
     generates:
       - out/firemage.exe
 
   build-win:
+    internal: true
     deps: [deps]
-    cmds:
-      - GOOS=windows GOARCH=amd64 go out -o out/firemage.exe .
+    cmd: GOOS=windows GOARCH=amd64 go out -o out/firemage.exe .
     sources:
       - ./**/*.go
     generates:
@@ -82,24 +88,24 @@ tasks:
 
   debug:
     deps: [deps]
-    cmds:
-      - go run . -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
+    cmd: go run . -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
 
   install:
     deps: [deps]
-    cmds:
-      - cmd: go install .
+    cmd: go install .
 
   run:
-    cmds:
-      - firemage -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
+    desc: Runs the code.
+    deps: [install]
+    cmd: firemage -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
 
   test:
+    desc: Tests the code.
     deps: [deps]
     cmds:
       - echo "testing ..."
       - go test -coverprofile coverage.out ./internal/... -v -p 1
 
   cover:
-    cmds:
-      - go tool cover -o cov.html -html=coverage.out; sed -i 's/black/whitesmoke/g' cov.html; chromium cov.html
+    desc: Checks code coverage, and opens the result in chromium with light colorscheme.
+    cmd: go tool cover -o cov.html -html=coverage.out; sed -i 's/black/whitesmoke/g' cov.html; chromium cov.html
