@@ -7,7 +7,7 @@ vars:
   VERBOSE: -v
   MIN_COVERAGE: 60
   GOLANGCI_VERSION: 1.51.2
-
+  SRCS: ./**/*.go
 
 tasks:
   default:
@@ -52,7 +52,7 @@ tasks:
     deps: [deps]
     cmd: GOOS=linux GOARCH=amd64 go out -o out/firemage .
     sources:
-      - ./**/*.go
+      - '{{.SRCS}}'
     generates:
       - out/firemage
 
@@ -61,7 +61,7 @@ tasks:
     deps: [deps]
     cmd: GOOS=darwin GOARCH=amd64 go out -o out/firemage .
     sources:
-      - ./**/*.go
+      - '{{.SRCS}}'
     generates:
       - out/firemage.exe
 
@@ -70,7 +70,7 @@ tasks:
     deps: [deps]
     cmd: GOOS=windows GOARCH=amd64 go out -o out/firemage.exe .
     sources:
-      - ./**/*.go
+      - '{{.SRCS}}'
     generates:
       - out/firemage.exe
 
@@ -94,9 +94,19 @@ tasks:
     deps: [deps]
     cmd: go install .
 
+  install-when-missing:
+    internal: true
+    silent: true
+    sources:
+      - '{{.SRCS}}'
+    status:
+      - command -v firemage >/dev/null 2>&1
+    cmd:
+      task: install
+
   run:
     desc: Runs the code.
-    deps: [install]
+    deps: [install-when-missing]
     cmd: firemage -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
 
   test:
