@@ -39,7 +39,7 @@ const (
 )
 
 var (
-	titles = map[string]string{srch: "Kereső", lst: "Lista"}
+	titles = map[string]string{pageSrch: "Kereső", pageLst: "Lista"}
 	warns  = map[int]string{
 		wSearchAgain:  "A változtatásaid megmaradnak az előző keresésből. Ha mégse szeretnéd őket, nyomj a Mégse gombra.",
 		wActionInList: "A korábbi változásaid megmaradnak. Ha a keresésnél hozzáadtál valakit, itt csak mentés után fogod látni.",

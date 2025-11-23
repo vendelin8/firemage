@@ -1,18 +1,14 @@
 package internal
 
 import (
+	"maps"
+	"time"
+
+	"github.com/gdamore/tcell/v2"
 	"github.com/vendelin8/tview"
 )
 
-const (
-	namedCols       = 2 // name and email column
-	checkBoxPadding = 2
-)
-
-var (
-	localUsers = map[string]*User{}
-	crntUsers  []string
-)
+const namedCols = 2 // name and email column
 
 func (f *Frontend) initUsersList() {
 	colNum := len(allPerms) + namedCols
@@ -25,7 +21,7 @@ func (f *Frontend) initUsersList() {
 	for i, perm := range allPerms {
 		j := i + namedCols
 		f.userHdrs[j] = permsMap[perm]
-		colSizes[j] = len(perm) + checkBoxPadding
+		colSizes[j] = len(perm) + 2 // checkbox padding
 	}
 	for col, text := range f.userHdrs {
 		f.userTbl.AddItem(newText(text), 0, col, 1, 1, 0, 0, false)
@@ -33,47 +29,104 @@ func (f *Frontend) initUsersList() {
 	f.userTbl.SetColumns(colSizes...)
 }
 
+// activatePopup is called when an empty checkbox is checked. It pops up a dialog
+// to change value to true or a given date.
+func activatePopup(i int, key string, checked bool, date *time.Time) {
+	// TODO: show a popup with a checkbox and a date picker
+	// fill in the checkbox or the date by the parameter
+	// buttons with "add ..." based on custom template
+}
+
 // tableCB returns a checkbox to the claim table filled with the saved value.
-func tableCB(i int, key string, claims map[string]bool) tview.Primitive {
+func tableCB(i int, key string, claims map[string]any) tview.Primitive {
 	checked := false
+	var date *time.Time
 	if cbv, ok := claims[key]; ok {
-		checked = cbv
+		if b, ok := cbv.(bool); ok {
+			checked = b
+		} else {
+			dateVal := cbv.(time.Time)
+			date = &dateVal
+		}
 	}
-	cb := tview.NewCheckbox().SetChangedFunc(func(checked bool) {
-		onActionChange(checked, i, key)
-	}).SetChecked(checked)
-	c := tview.NewCenter(cb, cb.GetFieldWidth(), cb.GetFieldHeight())
+
+	var (
+		box tview.FormItem
+		bgc = tview.Styles.PrimitiveBackgroundColor
+		ftc = tview.Styles.PrimaryTextColor
+	)
+
 	if i%2 == 1 {
-		cb.SetBackgroundColor(tview.Styles.PrimaryTextColor)
-		cb.SetFieldTextColor(tview.Styles.PrimitiveBackgroundColor)
+		bgc = tview.Styles.PrimaryTextColor
+		ftc = tview.Styles.PrimitiveBackgroundColor
+	}
+
+	if date == nil {
+		cb := tview.NewCheckbox().SetChangedFunc(func(checked bool) {
+			if checked {
+				activatePopup(i, key, false, nil)
+			} else {
+				onActionChange(i, key, checked, nil)
+			}
+		}).SetChecked(checked).
+			SetFieldTextColor(ftc)
+		cb.SetBackgroundColor(bgc)
+		box = cb
+	} else {
+		tv := tview.NewTextView().
+			SetText(date.Format(dateFormat)).
+			SetTextColor(ftc)
+		tv.SetBackgroundColor(bgc).
+			SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				activatePopup(i, key, false, date)
+				return nil
+			}).SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+			activatePopup(i, key, false, date)
+			return action, nil
+		})
+		box = tv
+	}
+
+	c := tview.NewCenter(box, box.GetFieldWidth(), box.GetFieldHeight())
+	if i%2 == 1 {
 		c.SetBackgroundColor(tview.Styles.PrimaryTextColor)
 	}
 	return c
 }
 
-func onActionChange(checked bool, i int, key string) {
+// onActionChange in called when a user claim is changed by checkbox or date field.
+func onActionChange(i int, key string, checked bool, date *time.Time) {
 	uid := crntUsers[i]
-	ai, ok := actions[uid]
-	if !ok {
-		actions[uid] = map[string]bool{key: checked}
+	current := localUsers[uid].Claims[key]
+	acts, ok := actions[uid]
+
+	if date != nil && current == *date || (current != nil) == checked {
+		delete(acts, key)
+		if len(acts) == 0 {
+			delete(actions, uid)
+		}
 		return
 	}
-	if _, ok = ai[key]; !ok {
-		ai[key] = checked
+
+	if !ok && len(acts) == 0 {
+		acts = map[string]any{}
+		actions[uid] = acts
+	}
+
+	if date != nil {
+		acts[key] = *date
 		return
 	}
-	delete(ai, key)
-	if len(ai) == 0 {
-		delete(actions, uid)
-	}
+
+	acts[key] = checked
 }
 
 // fixedUserClaims returns user name, email and claims with applied actions.
-func fixedUserClaims(uid string) (string, string, map[string]bool) {
+func fixedUserClaims(uid string) (string, string, map[string]any) {
 	u := localUsers[uid]
 	claims := u.Claims
 	if ac, ok := actions[uid]; ok {
-		claims = copyClaims(u.Claims)
+		claims = maps.Clone(u.Claims)
 		for k, v := range ac {
 			claims[k] = v
 		}

@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"github.com/gdamore/tcell/v2"
-	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,20 +21,6 @@ const (
 	cmdEnd
 )
 
-var (
-	// shortcuts defines what to call in case of a keyboard shortcut press.
-	shortcuts = map[tcell.Key]int{}
-	// menuItems are the default menu items.
-	menuItems = map[int]*menuItem{
-		cmdCancel:  {"F8", []tcell.Key{tcell.KeyF8}, "", menuCancel, false, true, cancel},
-		cmdRefresh: {"F5", []tcell.Key{tcell.KeyF5}, "", menuRefresh, true, true, refresh},
-		cmdSearch:  {"F2", []tcell.Key{tcell.KeyF2}, srch, titles[srch], false, true, showSearch},
-		cmdList:    {"F3", []tcell.Key{tcell.KeyF3}, lst, titles[lst], false, true, showList},
-		cmdSave:    {"F6", []tcell.Key{tcell.KeyF6}, "", menuSave, true, true, save},
-		cmdQuit:    {"Esc", []tcell.Key{tcell.KeyEsc}, "", menuQuit, false, true, quit},
-	}
-)
-
 // menuItem defines default menu items' structure.
 type menuItem struct {
 	shortcut string
@@ -44,33 +29,33 @@ type menuItem struct {
 	text     string
 	positive bool
 	isDef    bool
-	function func()
+	function func() error
 }
 
 // initConf initializes configurations, only keyboard shortcuts for now.
-func initConf(menuCb func(menuKey, text, shortcut string, isPositive bool)) {
+func initConf(menuCb func(menuKey, text, shortcut string, isPositive bool)) error {
 	// loading config file
 	if len(confPath) == 0 {
-		loadConf(menuCb, nil)
-		return
+		return loadConf(menuCb, nil)
 	}
 	fp, err := os.Open(confPath)
 	if err == nil {
-		loadConf(menuCb, fp)
-		return
+		return loadConf(menuCb, fp)
 	}
-	lgr.Error(errConfPath, zap.Error(err))
-	loadConf(menuCb, nil)
+	return fmt.Errorf(errConfPath, err)
 }
 
 // initConf initializes configurations, only keyboard shortcuts for now.
-// Shows any errors in GUI in case of an error.
-func loadConf(menuCb func(menuKey, text, shortcut string, isPositive bool), fp io.Reader) {
+func loadConf(menuCb func(menuKey, text, shortcut string, isPositive bool), fp io.Reader) error {
 	defer saveShortcuts(menuCb)
 
-	kc := loadYamlConf(fp)
+	kc, err := loadYamlConf(fp)
+	if err != nil {
+		return err
+	}
+
 	if len(kc) == 0 {
-		return
+		return nil
 	}
 
 	mapTextToCmd := map[string]int{}
@@ -104,28 +89,30 @@ func loadConf(menuCb func(menuKey, text, shortcut string, isPositive bool), fp i
 		for key := range kc {
 			notFoundKeys = append(notFoundKeys, key)
 		}
-		writeErrorList(errKeyNotFound, notFoundKeys)
+		if err := writeErrorListGet(errKeyNotFound, notFoundKeys); err != nil {
+			return err
+		}
 	}
-	writeErrorMap(errCmdNotFound, notFound)
+	return writeErrorMap(errCmdNotFound, notFound)
 }
 
-func loadYamlConf(fp io.Reader) map[string]any {
+func loadYamlConf(fp io.Reader) (map[string]any, error) {
 	if fp == nil {
-		return nil
+		return nil, nil
 	}
 	d := yaml.NewDecoder(fp)
 	v := make(map[any]any)
 	if err := d.Decode(&v); err != nil {
-		writeErrorStr(fmt.Sprintf(errConfParse, err.Error()))
-		return nil
+		return nil, fmt.Errorf(errConfParse, err)
 	}
 
 	// loading keyboard shortcuts from config file
 	kc, ok := v[cShortcuts].(map[string]any)
 	if !ok {
-		return nil
+		return nil, errConfInvalid
 	}
-	return kc
+
+	return kc, nil
 }
 
 func saveShortcuts(menuCb func(menuKey, text, shortcut string, isPositive bool)) {

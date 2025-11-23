@@ -7,14 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	confPath string
-	keyPath  string
-	verbose  bool
-	useEmu   bool
-	lgr      *zap.Logger
-)
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "firemage",

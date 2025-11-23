@@ -6,12 +6,6 @@ import (
 	"github.com/vendelin8/tview"
 )
 
-const (
-	name        = "name"
-	email       = "email"
-	formPadding = 3 // top+button+bottom
-)
-
 func (f *Frontend) initSearch() {
 	f.searchForEmail()
 	f.app.SetFocus(f.searchField)
@@ -22,10 +16,10 @@ func (f *Frontend) initSearch() {
 		fe.layoutUsers()
 	})
 
-	f.setOnShow(srch, func() {
+	f.setOnShow(pageSrch, func() {
 		f.searchPage.ResizeItemAt(1, len(crntUsers)+1, 0)
 	})
-	h := formPadding
+	h := 3 // form padding: top+button+bottom
 	for i := 0; i < form.GetFormItemCount(); i++ {
 		h += form.GetFormItem(i).GetFieldHeight()
 		h++

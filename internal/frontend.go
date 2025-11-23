@@ -6,19 +6,6 @@ import (
 	"github.com/vendelin8/tview"
 )
 
-const (
-	msg         = "msg"
-	cnfrm       = "confirm"
-	srch        = "search"
-	lst         = "list"
-	searchWidth = 40
-)
-
-var (
-	fe          FeIf
-	activePopup string
-)
-
 // FeIf is an interface to be able to mock tview GUI functionality.
 type FeIf interface {
 	run()
@@ -79,8 +66,8 @@ func createGUI() *Frontend {
 	f.filler = tview.NewBox()
 	f.app = tview.NewApplication()
 	f.header = newText("")
-	f.searchField = tview.NewInputField().SetFieldWidth(searchWidth)
-	f.searchFieldName = map[int]string{0: email, 1: name}
+	f.searchField = tview.NewInputField().SetFieldWidth(40)
+	f.searchFieldName = map[int]string{0: "email", 1: "name"}
 	f.userTbl = tview.NewGrid()
 	f.menu = tview.NewTextView().SetDynamicColors(true).SetRegions(true).SetWrap(false)
 	f.initUsersList()
@@ -88,7 +75,7 @@ func createGUI() *Frontend {
 }
 
 func (f *Frontend) run() {
-	initConf(func(menuKey, text, shortcut string, isPositive bool) {
+	err := initConf(func(menuKey, text, shortcut string, isPositive bool) {
 		var color string
 		switch {
 		case len(menuKey) > 0:
@@ -100,23 +87,27 @@ func (f *Frontend) run() {
 		}
 		fmt.Fprintf(f.menu, ` %s ["%s"][%s::b]%s[white::-][""]  `, shortcut, menuKey, color, text)
 	})
+	must("init configuration", err)
+
 	f.initSearch()
 	f.initList()
-	f.pages = tview.NewPages().AddPage(srch, f.searchPage, true, false).
-		AddPage(lst, f.listPage, true, false)
+	f.pages = tview.NewPages().AddPage(pageSrch, f.searchPage, true, false).
+		AddPage(pageLst, f.listPage, true, false)
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(f.header, 1, 0, false).
 		AddItem(f.pages, 0, 1, true).AddItem(f.menu, 1, 0, false)
 	f.app.SetInputCapture(cmdByKey)
-	showPage(srch)
+
+	err = showPage(pageSrch)
+	must("showing initial page", err)
+
 	f.app.SetRoot(layout, true).EnableMouse(true)
-	showErrorsIf()
 	must("run app", f.app.Run())
 }
 
 // showMsg shows the given message as a popup.
 func (f *Frontend) showMsg(m string) {
 	if f.msg != nil {
-		f.pages.ShowPage(msg)
+		f.pages.ShowPage(popupMsg)
 		f.msg.SetText(m)
 		return
 	}
@@ -125,14 +116,14 @@ func (f *Frontend) showMsg(m string) {
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			hidePopup()
 		})
-	f.pages.AddPage(msg, tview.NewCenter(f.msg, width, height), true, true)
+	f.pages.AddPage(popupMsg, tview.NewCenter(f.msg, width, height), true, true)
 	f.msg.SetText(m)
 }
 
 // showConfirm shows a confirm dialog with a text, and callback functions for OK and Cancel.
 func (f *Frontend) showConfirm(m string, okFunc, cancelFunc func()) {
 	if f.confirm != nil {
-		f.pages.ShowPage(cnfrm)
+		f.pages.ShowPage(popupCnfrm)
 		f.app.SetFocus(f.confirm.SetFocus(0))
 		f.confirm.SetText(m)
 		return
@@ -140,7 +131,7 @@ func (f *Frontend) showConfirm(m string, okFunc, cancelFunc func()) {
 	width, height := 50, 10 // TODO: resize based on text size
 	f.confirm = tview.NewModal().AddButtons([]string{sYes, sNo}).
 		SetDoneFunc(confirmDoneFunc(okFunc, cancelFunc))
-	f.pages.AddPage(cnfrm, tview.NewCenter(f.confirm, width, height), true, true)
+	f.pages.AddPage(popupCnfrm, tview.NewCenter(f.confirm, width, height), true, true)
 	f.confirm.SetText(m)
 }
 

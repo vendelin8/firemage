@@ -7,86 +7,93 @@ import (
 	"go.uber.org/zap"
 )
 
-func showList() {
-	showPage(lst)
+func showList() error {
+	showPage(pageLst)
+	return nil
 }
 
-func showSearch() {
-	showPage(srch)
+func showSearch() error {
+	showPage(pageSrch)
+	return nil
 }
 
 // search looks for users in Firestore with email or name starting with given part.
 // Results are loaded into crntUsers uid string list.
-func search(searchKey, searchValue string) {
+func search(searchKey, searchValue string) error {
 	lgr.Info("searching for", zap.String("key", searchKey), zap.String("value", searchValue))
 	if len(searchValue) < minSearchLen {
-		fe.showMsg(fmt.Sprintf(errMinLen, minSearchLen))
-		return
+		return fmt.Errorf(errMinLen, minSearchLen)
 	}
 	if len(actions) > 0 {
 		showWarningOnce(wSearchAgain)
 	}
 	crntUsers = crntUsers[:0]
-	fb.searchFor(searchKey, searchValue, func(newUser string) {
+	err := searchFor(searchKey, searchValue, func(newUser string) error {
 		crntUsers = append(crntUsers, newUser)
+		return nil
 	})
+	if err != nil {
+		return fmt.Errorf(errSearch, err)
+	}
 	if len(crntUsers) == 0 {
-		writeErrorStr(warnNoUsers)
+		return errNoUsers
 	}
 	sortByNameThenEmail(crntUsers)
-	showErrorsIf()
+	return nil
 }
 
 // cancel clears unsaved permission changes.
-func cancel() {
+func cancel() error {
 	lgr.Info("cancel")
 	if len(actions) == 0 {
-		showMsg(sNoChanges)
-		return
+		return errNoChanges
 	}
-	actions = map[string]map[string]bool{}
+	actions = map[string]map[string]any{}
 	fe.layoutUsers()
+	return nil
 }
 
 // refresh refreshes GUI and firestore cache from iterating all firebase auth users.
-func refresh() {
+func refresh() error {
 	lgr.Info("refresh")
-	if fe.currentPage() != lst {
-		showMsg(errCantRefresh)
-		return
+	if fe.currentPage() != pageLst {
+		return errCantRefresh
 	}
 	if len(actions) > 0 {
-		showMsg(errActions)
-		return
+		return errActions
 	}
-	fb.saveList(actRefresh)
+	if err := doRefresh(); err != nil {
+		return fmt.Errorf(errRefresh, err)
+	}
 	if len(crntUsers) == 0 {
-		writeErrorStr(warnNoUsers)
+		return errNoUsers
 	}
-	if showErrorsIf() {
-		showMsg(sNoChanges)
-	}
+
+	return errNoChanges
 }
 
 // save saves user changes if any.
-func save() {
+func save() error {
 	lgr.Info("save")
 	if len(actions) == 0 {
-		showMsg(sNoChanges)
-		return
+		return errNoChanges
 	}
-	fb.saveList(actSave)
-	if showErrorsIf() {
-		showMsg(sSaved)
+
+	if err := doSave(); err != nil {
+		return fmt.Errorf(errSave, err)
 	}
+
+	fe.showMsg(sSaved)
+
+	return nil
 }
 
 // showPage shows the given page.
-func showPage(newPage string) {
+func showPage(newPage string) error {
 	lgr.Info("showPage", zap.String("newPage", newPage))
 	oldPage := fe.currentPage()
 	if newPage == oldPage {
-		return
+		return nil
 	}
 
 	savedUsers[oldPage] = crntUsers // saving users to the closing page
@@ -95,19 +102,20 @@ func showPage(newPage string) {
 		crntUsers = us
 	} else {
 		crntUsers = []string{}
-		if newPage == lst {
-			fb.saveList(actList)
+		if newPage == pageLst {
+			if err := doList(); err != nil {
+				return fmt.Errorf(errList, err)
+			}
 			if len(crntUsers) == 0 {
-				writeErrorStr(warnNoUsers)
-				writeErrorStr(warnMayRefresh)
+				return fmt.Errorf("%s %s", errNoUsersStr, warnMayRefresh)
 			}
 		}
 	}
-	if len(actions) > 0 && newPage == lst {
+	if len(actions) > 0 && newPage == pageLst {
 		showWarningOnce(wActionInList)
 	}
-	showErrorsIf()
 	fe.layoutUsers()
+	return nil
 }
 
 // hasPopup returns if there's an active popup window.
@@ -116,13 +124,15 @@ func hasPopup() bool {
 }
 
 // quit exists the application.
-func quit() {
+func quit() error {
 	lgr.Info("quit")
 	if len(actions) == 0 {
 		fe.quit()
-		return
+		return nil
 	}
+
 	showConfirm(fmt.Sprintf(warnUnsaved, len(actions)), fe.quit, nil)
+	return nil
 }
 
 // cmdByKey calls the adequate api function through a keyboard shortcut.
@@ -132,7 +142,9 @@ func cmdByKey(ev *tcell.EventKey) *tcell.EventKey {
 		return ev
 	}
 	if !hasPopup() {
-		menuItems[cmd].function()
+		if err := menuItems[cmd].function(); err != nil {
+			fe.showMsg(err.Error())
+		}
 		return nil
 	}
 	if cmd != cmdQuit {

@@ -1,14 +1,10 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
-)
-
-const (
-	wSearchAgain = iota
-	wActionInList
 )
 
 var (
@@ -20,7 +16,7 @@ var (
 
 // showMsg shows the given message to the user, based on current frontend.
 func showMsg(m string) {
-	activePopup = msg
+	activePopup = popupMsg
 	fe.showMsg(m)
 }
 
@@ -31,12 +27,12 @@ func showWarningOnce(w int) {
 		return
 	}
 	delete(warns, w)
-	writeErrorStr(ws)
+	showMsg(ws)
 }
 
 // showConfirm shows a confirm dialog with a text, and callback functions for OK and Cancel.
 func showConfirm(m string, okFunc, cancelFunc func()) {
-	activePopup = cnfrm
+	activePopup = popupCnfrm
 	fe.showConfirm(m, okFunc, cancelFunc)
 }
 
@@ -69,48 +65,77 @@ func writeErrorStr(msg string) {
 	b.WriteString(msg)
 }
 
-// writeErrorList adds a new error line to the error buffer with a given list of input strings.
-func writeErrorList(msg string, inputs []string, msgs ...string) bool {
-	if len(inputs) == 0 {
-		return true
+// writeErrorListGet creates an error through the error buffer with a given list of input strings.
+func writeErrorListGet(msg string, inputs []string, msgs ...string) error {
+	writeErrorList(msg, inputs, msgs...)
+	return getErrors()
+}
+
+// writeErrorListShow shows an error through the error buffer with a given list of input strings.
+func writeErrorListShow(msg string, inputs []string, msgs ...string) {
+	writeErrorList(msg, inputs, msgs...)
+
+	if errStr := getErrorStr(); len(errStr) > 0 {
+		showMsg(errStr)
 	}
+}
+
+// writeErrorList writes an error to the error buffer with a given list of input strings.
+func writeErrorList(msg string, inputs []string, msgs ...string) {
+	if len(inputs) == 0 {
+		return
+	}
+
 	sort.Strings(inputs)
 	writeErrorStr(fmt.Sprintf(msg, strings.Join(inputs, ", ")))
+
 	for _, msg = range msgs {
 		writeErrorStr(msg)
 	}
-	return false
 }
 
-// writeErrorMap adds a new error line to the error buffer with a given map of input strings.
-func writeErrorMap(msg string, inputs map[string]struct{}, msgs ...string) bool {
+// writeErrorMap creates an error through the error buffer with a given map of input strings.
+func writeErrorMap(msg string, inputs map[string]struct{}, msgs ...string) error {
 	if len(inputs) == 0 {
-		return true
+		return nil
 	}
+
 	l := make([]string, 0, len(inputs))
 	for in := range inputs {
 		l = append(l, in)
 	}
-	return writeErrorList(msg, l, msgs...)
+
+	return writeErrorListGet(msg, l, msgs...)
 }
 
 // writeErrorIf adds a new error line if the given error is not empty. Returns if it was OK.
-func writeErrorIf(err error) bool {
-	if err == nil {
-		return true
+// func writeErrorIf(err error) bool {
+// 	if err == nil {
+// 		return true
+// 	}
+// 	writeErrorStr(err.Error())
+// 	return false
+// }
+
+// getErrors creates current error message if the buffer is not empty as an error.
+func getErrors() error {
+	s := getErrorStr()
+	if len(s) == 0 {
+		return nil
 	}
-	writeErrorStr(err.Error())
-	return false
+
+	return errors.New(s)
 }
 
-// showErrorsIf shows current error message if the buffer is not empty.
-func showErrorsIf() bool {
+// getErrorStr returns current error message if the buffer is not empty as a string.
+func getErrorStr() string {
 	if b.Len() == 0 {
-		return true
+		return ""
 	}
+
 	s := b.String()
 	lgr.Info(s)
-	showMsg(s)
+
 	b.Reset()
-	return false
+	return s
 }

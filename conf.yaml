@@ -1,1 +1,10 @@
-i18n/en/conf.yaml
+# The followings are the default keyboard shortcuts. You can edit them. If you assign a new shortcut to any of them,
+# The old one gets removed. You can add multiple shortcuts to a command, eg. "F3: List" and "F4: List"
+# Shortcut names are listed here: https://github.com/gdamore/tcell/blob/main/key.go#L83
+keyboardShortcuts:
+  F2: Search
+  F3: List
+  F5: Refresh
+  F6: Save
+  F8: Cancel
+  Esc: Quit

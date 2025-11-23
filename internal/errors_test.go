@@ -5,7 +5,7 @@ import (
 )
 
 func TestConfirm(t *testing.T) {
-	defer setup()()
+	defer setup(t)()
 
 	var okPressed, cancelPressed bool
 	okFunc := func() {
