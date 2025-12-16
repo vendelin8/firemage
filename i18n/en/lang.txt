@@ -1,0 +1,73 @@
+package lang
+
+const (
+	MenuRefresh = "Refresh"
+	MenuSave    = "Save"
+	MenuCancel  = "Cancel"
+	MenuQuit    = "Quit"
+	ShortDesc   = "Firebase auth admin"
+	LongDesc    = "firemage is a CLI tool to manage Firebase Auth Claims, written in Golang"
+	DescKey     = "Google service account file path"
+	DescConf    = "config file path"
+	DescLog     = "log file path"
+	DescDebug   = "to print debug info"
+	DescEmul    = "if use local firebase emulator"
+	SName       = "Name"
+	SEmail      = "Email"
+	SSearchThis = "Search this:"
+	SDoSearch   = "Search"
+	SYes        = "Yes"
+	SNo         = "No"
+	SCancel     = "Cancel"
+	SSaved      = "Saved"
+	SActive     = "Active"
+	SInactive   = "Inactive"
+	STimed      = "Timed"
+	SWorking    = "Working..."
+	CShortcuts  = "keyboardShortcuts"
+	WarnUnsaved = "You have %d unsaved actions. Are you sure to quit?"
+
+	ErrSave    = "save failed: %w"
+	ErrEmpty   = "missing user(s) from privileged ones: %s"
+	ErrMinLen  = "insert at least %d characters"
+	ErrSearch  = "failed to get search results: %w"
+	ErrRefresh = "refresh failed: %w"
+	ErrChanged = "changed permissions or new user(s): %s"
+	ErrRemoved = "the following user(s) were deleted from the system: %s"
+	ErrManualS = "anyone touched the claims or the database manually?"
+	ErrTimeFmt = "invalid format: expected format like '1d', '1w', '1m', or '1y'"
+
+	ErrTimeUnit   = "invalid unit: %s (expected 'd', 'w', 'm', or 'y')"
+	ErrConfPath   = "config file not found, please check application arguments: %w"
+	ErrSetPerms   = "set permissions: %w"
+	ErrTimeoutS   = "database access timeout"
+	ErrNoUsersS   = "no such user found"
+	ErrActionsS   = "you have to save or cancel the current changes"
+	ErrEmptyTime  = "empty time string"
+	ErrConfParse  = "error while parsing config file: %s"
+	ConfirmSaveS  = "Do you want to save your version to the database?"
+	ErrGetFSUsers = "failed to get users from database: %w"
+	ErrNoChangesS = "no changes"
+
+	WarnMayRefresh   = "consider a refresh"
+	ErrCmdNotFound   = "not found keyboard command(s): %s"
+	ErrKeyNotFound   = "not found keyboard shortcut(s): %s"
+	ErrGetAuthUsers  = "failed to get users from auth: %w"
+	ErrConfInvalidS  = "config file is invalid"
+	ErrCantRefreshS  = "refresh is possible only on List page"
+	ErrWrongDBClaimS = "a downloaded user has wrong claim, please consult database admin for help"
+	ErrUpdateFSUsers = "failed to update users in database: %w"
+	ErrNewUsrFrmAuth = "new user from, auth: %w"
+	ErrPermsChangedS = "The user's permissions have been changed since loading from the database. Email: %s"
+	WarnAddedPemsS   = "added permissions: %v"
+	WarnRemovedPemsS = "removed permissions: %v"
+	ErrWrongTimeBtns = `TimedButtons entries must be of format {<label>, <time>}, e.g. {"One month", "1m"}`
+)
+
+var (
+	Titles = map[string]string{PageSearch: SDoSearch, PageList: "List"}
+	Warns  = map[int]string{
+		WarnSearchAgain:  "Your changes stay there from your recent searches. To remove them, click on Cancel.",
+		WarnActionInList: "Your recent changes stay there. If you added permissions while searching, you'll only see them here after Save.",
+	}
+)

@@ -1,0 +1,17 @@
+version: '3'
+
+tasks:
+  sed:
+    requires:
+      vars:
+        - FROM
+        - TO
+        - FILE
+    desc: Changes a file with sed for Linux.
+    cmd: sed -i "s/{{.FROM}}/{{.TO}}/" {{.FILE}}
+
+  browser:
+    requires:
+      vars:
+        - TARGET
+    cmd: chromium {{.TARGET}}

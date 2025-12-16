@@ -15,9 +15,10 @@ Let's assume you have a
   1. A list of all users with special permissions is saved as a cache. Otherwise you'd have to iterate all Firebase Auth users every time.
 
 ## Use cases
-- Search users by name or email address (if you have those in your Firestore), and change their permissions.
-- List all privileged users from the Firestore cache, and change their permissions.
-- Save your changes to Firebase Auth and the Firestore cache.
+- List all privileged users from the Firestore cache.
+- Search users by name or email address (if you have those in your Firestore).
+- Edit permissions of listed or searched users.
+- Save permission changes to Firebase Auth and the Firestore cache.
 - In case your Firestore cache and Auth Claims get out of sync, you can refresh the cache.
 
 ## Setup
@@ -29,15 +30,15 @@ go get github.com/vendelin8/firemage
 ```
 
 1. Go to https://console.cloud.google.com/iam-admin/serviceaccounts?project=YOUR_PROJECT_ID to create a service account key, and download it somewhere inside `$GOPATH/src/github.com/vendelin8/firemage` folder. The default path is `service-account.json`, change it in `Taskfile` if you want it otherwise.
-1. Fill in `custom/custom.go` with your details.
-1. The default is English (`LANG`=`en`). If you want to change it to your language, and you can find it in `i18n` folder, call:
+1. Fill in `custom/custom.txt` with your details. These will be built into the binary.
+1. Localization will be built into the binary too. The default is English (`LANG`=`en`). If you want to change it to your language, and you can find it in `i18n` folder, call:
 
 ```bash
-task setlang <LANG>
+task setlang LANG=<LANG>
 ```
 
 ## Configurate keyboard shortcuts
-You can overwrite the defaults by editing `conf.yaml`. It's localized with `task setlang`, see above. You can define more shortcuts to functions as well.
+You can overwrite the defaults by editing `conf.yml`. It's localized with `task setlang`, see above. You can define more shortcuts to functions as well.
 
 ## Help
 You can print help with
@@ -65,7 +66,7 @@ You can compile with
 task build
 ```
 
-or cross compile to multiple platforms with `task build-win`, `task build-osx` or `task build-lin`. It will output to `build` folder. It compiles `custom/custom.go` options and chosen language. You can ship with the compiled version to a teammate. Add `service-account.json` in the same folder and optionally `conf.yaml` to be able to configure keyboard shortcuts.
+or cross compile to multiple platforms with `task build-win`, `task build-osx` or `task build-lin`. It will output to `build` folder. It compiles `custom/custom.go` options and chosen language. You can ship with the compiled version to a teammate. Add `service-account.json` in the same folder and optionally `conf.yml` to be able to configure keyboard shortcuts.
 
 ## How Firestore caching works
 The first `Refresh` call will create a collection `misc` with a document `specialUsers`. It will have all privileged users as `uid` -> `email` pairs as data. When you open the `List` page in the app, it will download this list, and get the permissions from Firebase Auth claims. By removing permissions and calling `Save` users may be removed from the cache list. By searching for email or name, adding permissions to other users and calling `Save`, users may be added to the cache list.

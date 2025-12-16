@@ -2,12 +2,23 @@ version: '3'
 
 vars:
   LANG: en
-  KEY: service-account.json
-  CONF: conf.yaml
   VERBOSE: -v
   MIN_COVERAGE: 60
   GOLANGCI_VERSION: 1.51.2
   SRCS: ./**/*.go
+  OUTDIR: out
+  BIN: '{{.OUTDIR}}/firemage'
+  COVER: '{{.OUTDIR}}/coverage.out'
+  COVERHTML: '{{.OUTDIR}}/cov.html'
+  LOG: '{{.PWD}}/{{.OUTDIR}}/log.txt'
+  KEY: '{{.PWD}}/{{.OUTDIR}}/service-account.json'
+  CONF: '{{.PWD}}/conf.yml'
+
+includes:
+  _os:
+    taskfile: taskfiles/os_{{OS}}.yml
+    internal: true
+    dir: .
 
 tasks:
   default:
@@ -16,21 +27,107 @@ tasks:
 
   help:
     desc: Helps with app commands.
+    dir: cmd/firemage
     cmd: go run . -h
 
   setlang:
-    desc: Sets language.
+    desc: Sets language by symlinking internalization.
     requires:
       vars:
         - name: LANG
           enum: [hu, en]
     cmds: # TODO: how should we handle windows?
-      - ln -sf ../i18n/"{{.LANG}}"/lang.go internal/
-      - ln -sf i18n/"{{.LANG}}"/conf.yaml ./
+      - ln -sf ../../i18n/"{{.LANG}}"/lang.txt internal/lang/lang.go
+      - ln -sf ./i18n/"{{.LANG}}"/conf.yml ./
+
+  outDir:
+    internal: true
+    generates:
+      - '{{.OUTDIR}}'
+    status:
+      - test -f {{.OUTDIR}}
 
   deps:
     internal: true
-    cmd: go get ./internal/...
+    sources:
+      - go.mod
+      - go.sum
+    cmds:
+      - go get ./...
+      - go mod tidy
+
+  install:
+    desc: Install into current system.
+    deps: [deps]
+    cmd: go install ./cmd/firemage
+
+  install-if-missing:
+    internal: true
+    silent: true
+    sources:
+      - '{{.SRCS}}'
+    status:
+      - command -v firemage >/dev/null 2>&1
+    cmd:
+      task: install
+
+  run:
+    desc: Runs the code.
+    deps: [install-if-missing, outDir]
+    cmd: firemage -k {{.KEY}} -c {{.CONF}} -l {{.LOG}} {{.CLI_ARGS}}
+
+  debug:
+    desc: Debug the app with helpful information
+    deps: [deps, outDir]
+    cmd: go run ./cmd/firemage -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} -l {{.LOG}} {{.CLI_ARGS}}
+
+  do-build:
+    internal: true
+    deps: [deps, outDir]
+    vars:
+      GOARCH: '{{.ARCH | default "amd64"}}'
+    cmd: GOOS={{.GOOS}} GOARCH={{.GOARCH}} go build -o {{.BIN}}{{.SUFFIX}} ./cmd
+    sources:
+      - '{{.SRCS}}'
+    generates:
+      - '{{.BIN}}{{.SUFFIX}}'
+
+  build-linux:
+    desc: (Cross-platform) linux build.
+    cmd:
+      task: do-build
+      vars:
+        GOOS: linux
+
+  build-darwin:
+    desc: (Cross-platform) mac build
+    cmd:
+      task: do-build
+      vars:
+        GOOS: darwin
+
+  build-windows:
+    desc: (Cross-platform) windows build
+    cmd:
+      task: do-build
+      vars:
+        GOOS: windows
+        SUFFIX: '.exe'
+
+  build:
+    cmds:
+      - cmd: echo windows
+        platforms: [windows]
+      - cmd: echo linux
+        platforms: [linux]
+      - cmd: echo darwin
+        platforms: [darwin]
+      - cmd: task build-windows
+        platforms: [windows]
+      - cmd: task build-linux
+        platforms: [linux]
+      - cmd: task build-darwin
+        platforms: [darwin]
 
   golanci-lint:
     internal: true
@@ -47,75 +144,38 @@ tasks:
     deps: [golanci-lint]
     cmd: .bin/golangci-lint-{{.GOLANGCI_VERSION}} run --skip-dirs "i18n|custom"
 
-  build-lin:
-    internal: true
-    deps: [deps]
-    cmd: GOOS=linux GOARCH=amd64 go out -o out/firemage .
-    sources:
-      - '{{.SRCS}}'
-    generates:
-      - out/firemage
-
-  build-osx:
-    internal: true
-    deps: [deps]
-    cmd: GOOS=darwin GOARCH=amd64 go out -o out/firemage .
-    sources:
-      - '{{.SRCS}}'
-    generates:
-      - out/firemage.exe
-
-  build-win:
-    internal: true
-    deps: [deps]
-    cmd: GOOS=windows GOARCH=amd64 go out -o out/firemage.exe .
-    sources:
-      - '{{.SRCS}}'
-    generates:
-      - out/firemage.exe
-
-  build:
-    deps: [deps]
-    cmds:
-      - cmd: go build -o out/firemage .
-        platforms: [linux, darwin]
-        generates:
-          - out/firemage
-      - cmd: go build -o out/firemage.exe .
-        platforms: [windows]
-        generates:
-          - out/firemage.exe
-
-  debug:
-    deps: [deps]
-    cmd: go run . -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
-
-  install:
-    deps: [deps]
-    cmd: go install .
-
-  install-when-missing:
-    internal: true
-    silent: true
-    sources:
-      - '{{.SRCS}}'
-    status:
-      - command -v firemage >/dev/null 2>&1
-    cmd:
-      task: install
-
-  run:
-    desc: Runs the code.
-    deps: [install-when-missing]
-    cmd: firemage -k {{.KEY}} -c {{.CONF}} {{.VERBOSE}} {{.CLI_ARGS}}
-
   test:
-    desc: Tests the code.
-    deps: [deps]
-    cmds:
-      - echo "testing ..."
-      - go test -coverprofile coverage.out ./internal/... -v -p 1
+    desc: Executes Go tests with coverage for all packages.
+    silent: true
+    cmd: |
+          GOLIST=$(go list ./...)
+          for exclude in '.*/mock' './cmd' './out'; do
+            GOLIST=$(echo "$GOLIST" | grep -v "$exclude")
+          done
+          echo "list: $GOLIST"
+          go test -cover $GOLIST -timeout 60s {{.SUFFIX}}
 
   cover:
-    desc: Checks code coverage, and opens the result in chromium with light colorscheme.
-    cmd: go tool cover -o cov.html -html=coverage.out; sed -i 's/black/whitesmoke/g' cov.html; chromium cov.html
+    desc: Generates test coverage report by its changes from origin/main.
+    deps: [outDir]
+    cmds:
+      - task: test
+        vars:
+          SUFFIX: '-coverprofile={{.COVER}}'
+      - go tool cover -o {{.COVERHTML}} -html={{.COVER}}
+      - go tool cover -func={{.COVER}} | rg total
+      - task: _os:sed
+        vars:
+          FROM: black
+          TO: whitesmoke
+          FILE: '{{.COVERHTML}}'
+      - task: _os:browser
+        vars:
+          TARGET: '{{.COVERHTML}}'
+
+  generate:
+    desc: Runs the "go generate" command in the current directory and all subdirectories to generate code.
+    cmds:
+      - cmd: echo "Running go generate..."
+        silent: true
+      - go generate ./...

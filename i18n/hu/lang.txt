@@ -1,0 +1,47 @@
+package lang
+
+const (
+	MenuRefresh    = "Frissít"
+	MenuSave       = "Ment"
+	MenuCancel     = "Mégse"
+	MenuQuit       = "Kilép"
+	ShortDesc      = "Firebase jogosultságkezelő"
+	LongDesc       = "firemage egy Go nyelven készült Firebase jogosultságokat kezelő terminál alkalmazás"
+	DescKey        = "Google service account fájl útvonala"
+	DescConf       = "beállítás fájl útvonala"
+	DescDebug      = "hibakereső üzenetek"
+	DescEmul       = "helyi firebase emulátor használata"
+	SName          = "Név"
+	SEmail         = "Email"
+	SSearchThis    = "Keresés erre:"
+	SDoSearch      = "Keresés"
+	SYes           = "Igen"
+	SNo            = "Nem"
+	SSaved         = "Mentés OK"
+	SNoChanges     = "Nem történt változás"
+	cShortcuts     = "gyorsbillentyűk"
+	WarnUnsaved    = "%d darab nem mentett akciód van. Biztos kilépsz?"
+	WarnNoUsers    = "Nincs idevágó felhasználó"
+	ErrCantRefresh = "A frissítés csak a Lista oldalon lehetséges!"
+	ErrActions     = "Először mentsd el az aktuális nézetet, vagy vond vissza a Mégse gombbal!"
+	ErrMinLen      = "Legalább %d karaktert írj be!"
+	WarnMayRefresh = "Fontold meg a frissítést!"
+	ErrManual      = "Valaki kézzel belenyúlt a jogokba vagy az adatbázisba?"
+	ErrNew         = "Új felhasználó(k) a jogosultak között: %s ."
+	ErrChanged     = "Megváltozott jogosultságú felhasználó(k): %s ."
+	ErrEmpty       = "Neki(k) megszűntek a jogosultságai(k): %s ."
+	ErrTimeout     = "Adatbázis időkorlát túllépés."
+	ErrRemoved     = "Az alábbiak törlődtek a rendszerből: %s ."
+	ErrConfPath    = "Nincs meg a beállítás fájl, ellenőrizd a program paramétereit."
+	errConfParse   = "Beállítás fájl hibás: %s ."
+	errCmdNotFound = "Hiányzó gyorsbillentyű parancs(ok): %s ."
+	errKeyNotFound = "Hiányzó gyorsbillentyű(k): %s ."
+)
+
+var (
+	Titles = map[string]string{pageSrch: "Kereső", pageLst: "Lista"}
+	warns  = map[int]string{
+		WarnSearchAgain:  "A változtatásaid megmaradnak az előző keresésből. Ha mégse szeretnéd őket, nyomj a Mégse gombra.",
+		WarnActionInList: "A korábbi változásaid megmaradnak. Ha a keresésnél hozzáadtál valakit, itt csak mentés után fogod látni.",
+	}
+)

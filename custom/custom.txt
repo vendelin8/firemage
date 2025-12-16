@@ -1,0 +1,40 @@
+package common
+
+const (
+	// MainTitle will be in the top row of the app.
+	MainTitle = "Firemage"
+	// minSearchLen defines the minimum length of a text to search for a prefix in name
+	// or email address. Less characters will give an error instead of searching.
+	MinSearchLen = 3
+	// the following are permission keys stored in Firebase Auth claims
+	Admin      = "admin"
+	SuperAdmin = "superAdmin"
+	Consultant = "consultant"
+)
+
+var (
+	// permsMap has user table column headers for the permissions defined above.
+	PermsMap = map[string]string{
+		Admin:      "Admin",
+		SuperAdmin: "SuperAdmin",
+		Consultant: "Consultant",
+	}
+
+	// AllPerms defines the order of table columns of the permissions defined above.
+	AllPerms = []string{Consultant, SuperAdmin, Admin}
+
+	// DateFormat shows how dates should look like.
+	DateFormat = "2006-01-02"
+
+	// TimedButtons is a mapping of permission buttons to add in human readable form.
+	// 	1d means 1 day
+	// 	1w means 7 days
+	//	1m means 1 month
+	//	1y means 1 year
+	// The number can be any integer for any of them, eg. "3w", "700d", "6m", "2y", etc.
+	TimedButtons = [][]string{
+		{"One month", "1m"},
+		{"Three months", "3m"},
+		{"One year", "1y"},
+	}
+)
