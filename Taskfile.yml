@@ -86,7 +86,7 @@ tasks:
     deps: [deps, outDir]
     vars:
       GOARCH: '{{.ARCH | default "amd64"}}'
-    cmd: GOOS={{.GOOS}} GOARCH={{.GOARCH}} go build -o {{.BIN}}{{.SUFFIX}} ./cmd
+    cmd: GOOS={{.GOOS}} GOARCH={{.GOARCH}} go build -o {{.BIN}}{{.SUFFIX}} ./cmd/firemage
     sources:
       - '{{.SRCS}}'
     generates:

@@ -22,7 +22,7 @@ var (
 
 func InitMenu() {
 	common.MenuItems = map[int]common.MenuItem{
-		conf.CmdCancel:  {Shortcut: "F8", Keys: []tcell.Key{tcell.KeyF8}, MenuKey: "", Text: lang.MenuCancel, Positive: false, IsDef: true, Function: cancel},
+		conf.CmdCancel:  {Shortcut: "F8", Keys: []tcell.Key{tcell.KeyF8}, MenuKey: "", Text: lang.SCancel, Positive: false, IsDef: true, Function: cancel},
 		conf.CmdRefresh: {Shortcut: "F5", Keys: []tcell.Key{tcell.KeyF5}, MenuKey: "", Text: lang.MenuRefresh, Positive: true, IsDef: true, Function: refresh},
 		conf.CmdSearch:  {Shortcut: "F2", Keys: []tcell.Key{tcell.KeyF2}, MenuKey: lang.PageSearch, Text: lang.Titles[lang.PageSearch], Positive: false, IsDef: true, Function: showSearch},
 		conf.CmdList:    {Shortcut: "F3", Keys: []tcell.Key{tcell.KeyF3}, MenuKey: lang.PageList, Text: lang.Titles[lang.PageList], Positive: false, IsDef: true, Function: showList},
