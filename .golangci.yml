@@ -1,54 +1,186 @@
+# golangci-lint v2 configuration based on Uber Go Style Guide
+# https://github.com/uber-go/guide/blob/master/style.md
+
+version: "2"
+
 run:
-  timeout: 10m
-  issues-exit-code: 1
-  tests: true
+  timeout: 3m
+  modules-download-mode: readonly
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+    - golines
+  settings:
+    gofumpt:
+      extra-rules: true
+    goimports:
+      local-prefixes:
+        - github.com/pepperstone
+    golines:
+      shorten-comments: true
+      max-len: 120
 
 linters:
-  # Enable specific linter
-  # https://golangci-lint.run/usage/linters/
   enable:
-    - cyclop # Go linter that checks if package imports are in a list of acceptable packages
-    - depguard # Go linter that checks if package imports are in a list of acceptable packages
-    - dogsled # Checks assignments with too many blank identifiers (e.g. x, , , _, := f())
-    - dupl # Tool for code clone detection
-    - errorlint # errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
-    - exhaustive # check exhaustiveness of enum switch statements
-    - exportloopref # checks for pointers to enclosing loop variables
-    - funlen # Tool for detection of long functions
-#    - gochecknoglobals # A global variable is a variable declared in package scope and that can be read and written to by any function within the package.
-    - gocritic # Provides diagnostics that check for bugs, performance and style issues.
-    - goconst # Inspects source code for security problems
-    - gocyclo # Computes and checks the cyclomatic complexity of functions
-    - goerr113 # Golang linter to check the errors handling expressions
-    - gofmt # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
-    - goimports # In addition to fixing imports, goimports also formats your code in the same style as gofmt.
-    - gomnd # An analyzer to detect magic numbers.
-    - goprintffuncname # Checks that printf-like functions are named with f at the end
-    - gosec # Inspects source code for security problems
-    - misspell # Finds commonly misspelled English words in comments
-    - nakedret # Finds naked returns in functions greater than a specified function length
-    - nestif # Reports deeply nested if statements
-    - nilerr # Finds the code that returns nil even if it checks that the error is not nil.
-    - noctx # noctx finds sending http request without context.Context
-    - nolintlint # Reports ill-formed or insufficient nolint directives
-    - prealloc # Finds slice declarations that could potentially be pre-allocated
-    - promlinter # Check Prometheus metrics naming via promlint
-    - revive # Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint.
-    - unconvert # Remove unnecessary type conversions
-    - unparam # Reports unused function parameters
-    - whitespace # Tool for detection of leading and trailing whitespace
+    # Core linters recommended by Uber Go Style Guide
+    - errcheck      # Ensure errors are handled
+    - govet         # Analyze code for common mistakes
+    - staticcheck   # Various static analysis checks
 
-linters-settings:
-  funlen:
-    lines: 100
-    statements: 50
+    # Additional linters that enforce Uber style guide rules
+    - ineffassign   # Detect ineffectual assignments
+    - misspell      # Find commonly misspelled English words
+    - nolintlint    # Ensure nolint directives are properly formatted
+    - prealloc      # Find slice declarations that could potentially be pre-allocated
+    - revive        # Replacement for golint with more rules
+    - unconvert     # Remove unnecessary type conversions
+    - unparam       # Find unused function parameters
+    - unused        # Find unused constants, variables, functions and types
+
+    - bodyclose # Ensures HTTP response bodies are closed
+    - copyloopvar # A linter detects places where loop variables are copied.
+    - errname  # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error or Errors.
+    - errorlint # check wrapping errors
+    - goconst # Find repeated strings that could be replaced by a constant.
+    - gocyclo # Computes and checks the cyclomatic complexity of functions.
+    - gosec  # Security vulnerability detection
+    - mirror # Reports wrong mirror patterns of bytes/strings usage.
+    - nestif # Reports deeply nested if statements.
+    - nilerr # Prevents returning nil errors
+    - noctx # Finds sending http request without context.Context.
+    - nonamedreturns # Reports all named returns.
+    - paralleltest # Encourages t.Parallel() usage
+    - reassign # Checks that package global variables are not reassigned.
+    - rowserrcheck # Checks whether Rows.Err of rows is checked successfully.
+    - sqlclosecheck # Checks that sql.Rows, sql.Stmt, sqlx.NamedStmt, pgx.Query are closed.
+    - testifylint # Testify assertion improvements
+    - usestdlibvars # A linter that detect the possibility to use variables/constants from the Go standard library.
+    - wastedassign # Finds wasted assignment statements.
+    - whitespace # checks for unnecessary newlines at the start and end of functions
+    - wrapcheck # Checks that errors returned from external packages are wrapped.
+    - wsl_v5 # Add or remove empty lines.
+    - zerologlint # Detects the wrong usage of zerolog that a user forgets to dispatch with Send or Msg.
+
+  settings:
+    errcheck:
+      check-blank: true
+
+    staticcheck:
+      checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022"]
+
+    gocyclo:
+      min-complexity: 24 # TODO: make it lower
+
+    nestif:
+      min-complexity: 7
+
+    # Style and naming conventions
+    revive:
+      rules:
+        # Avoid Using Built-In Names
+        - name: redefines-builtin-id
+
+        # Variable naming conventions
+        - name: var-naming
+          arguments: [["ID"], ["HTTP", "URL", "API"]]
+
+        # Import conventions
+        - name: dot-imports
+        - name: import-shadowing
+
+        # Error handling patterns
+        - name: error-strings          # Error strings should not be capitalized
+        - name: error-return           # Return errors as last value
+        - name: indent-error-flow      # Reduce Nesting - handle errors first
+        - name: if-return              # Unnecessary Else - prefer early returns
+
+        # Function and method conventions
+        - name: context-as-argument    # Context should be first parameter
+        - name: context-keys-type      # Context keys should have specific types
+        - name: time-naming            # Use "time" to handle time
+
+        # Code organization
+        - name: unexported-return      # Don't return unexported types from exported functions
+        - name: unused-parameter       # Find unused parameters
+        - name: unused-receiver        # Find unused receivers
+        # TODO: in the future, we can enable this rule
+        # - name: argument-limit         # Max function parameter limit
+        #   arguments: [4]
+
+        # Performance and best practices
+        - name: string-of-int          # Prefer strconv over fmt
+        - name: atomic                 # Use go.uber.org/atomic patterns
+        - name: string-format          # enforce error messages
+          arguments:
+            - - errors.New[0],fmt.Errorf[0]
+              - '!/^.*(?:failed|error).*$/'
+              - error messages must not contain 'failed' or 'error'
+
+        # Struct and interface patterns
+        - name: struct-tag             # Use field tags in marshaled structs
+        - name: empty-block            # Avoid empty blocks
+        - name: superfluous-else       # Unnecessary Else
+        - name: confusing-naming       # Avoid confusing names
+        - name: deep-exit              # Exit in Main - avoid deep exits
+
+    wrapcheck:
+      extra-ignore-sigs:
+        - NewProcessorError
+        - NewPaymentProcessError
+        - NewProcessorErrorWithUUID
+    wsl_v5:
+      disable:
+        - leading-whitespace
+        - trailing-whitespace
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+
+  exclusions:
+    generated: lax
+    rules:
+    # Allow init() functions in main packages - Exit in Main
+    - path: "main\\.go"
+      linters:
+        - revive
+      text: "should not use init function"
+
+    # Allow longer lines in generated files
+    - path: "mock_.*\\.go"
+      formatters:
+        - golines
+      text: "should not use golines"
+
+    # Allow longer lines in generated files
+    - path: ".*gen\\.go"
+      formatters:
+        - golines
+      text: "should not use golines"
+
+    - path: "(.+)_test\\.go"
+      linters:
+        - errcheck
+        - wrapcheck
+        - revive
+    - path: internal/
+      linters:
+        - wrapcheck
+        - revive
+
+      # Maximum issues count per one linter
+      max-issues-per-linter: 0
+
+      # Maximum count of issues with the same text
+      max-same-issues: 0
 
 issues:
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gochecknoglobals
-        - gosec
-        - funlen
-        - noctx
+  new-from-rev: origin/main
+
+output:
+  formats:
+    text:
+      colors: true
+      print-issued-lines: true
+      print-linter-name: true

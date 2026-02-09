@@ -59,15 +59,13 @@ func refresh() error {
 	}
 
 	// Run refresh operation asynchronously so UI can redraw the progress popup
-	go func() {
-		if err := firebase.DoRefresh(); err != nil {
-			window.ShowErrorBuffer(fmt.Errorf(lang.ErrRefresh, err))
-			return
-		}
-		if len(global.CrntUsers) == 0 {
-			window.ShowErrorBuffer(common.ErrNoUsers)
-		}
-	}()
+	if err := firebase.DoRefresh(); err != nil {
+		return fmt.Errorf(lang.ErrRefresh, err)
+	}
+
+	if len(global.CrntUsers) == 0 {
+		window.ShowErrorBuffer(common.ErrNoUsers)
+	}
 
 	return nil
 }
@@ -79,13 +77,11 @@ func save() error {
 	}
 
 	// Run save operation asynchronously so UI can redraw the progress popup
-	go func() {
-		if err := firebase.DoSave(); err != nil {
-			window.ShowErrorBuffer(fmt.Errorf(lang.ErrSave, err))
-			return
-		}
-		common.Fe.ShowMsg(lang.SSaved)
-	}()
+	if err := firebase.DoSave(); err != nil {
+		return fmt.Errorf(lang.ErrSave, err)
+	}
+
+	common.Fe.ShowMsg(lang.SSaved)
 
 	return nil
 }

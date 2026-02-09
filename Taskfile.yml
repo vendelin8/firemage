@@ -4,7 +4,7 @@ vars:
   LANG: en
   VERBOSE: -v
   MIN_COVERAGE: 60
-  GOLANGCI_VERSION: 1.51.2
+  GOLANGCI_VERSION: 2.8.0
   SRCS: ./**/*.go
   OUTDIR: out
   BIN: '{{.OUTDIR}}/firemage'
@@ -48,7 +48,6 @@ tasks:
       - test -f {{.OUTDIR}}
 
   deps:
-    internal: true
     sources:
       - go.mod
       - go.sum
@@ -142,7 +141,7 @@ tasks:
   lint:
     desc: Runs linter on the code.
     deps: [golanci-lint]
-    cmd: .bin/golangci-lint-{{.GOLANGCI_VERSION}} run --skip-dirs "i18n|custom"
+    cmd: .bin/golangci-lint-{{.GOLANGCI_VERSION}} run --fix
 
   test:
     desc: Executes Go tests with coverage for all packages.

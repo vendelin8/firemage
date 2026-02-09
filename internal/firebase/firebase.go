@@ -170,7 +170,10 @@ func (f *Firebase) GetSpecs(ctx context.Context) (map[string]any, error) {
 	return ds.Data(), nil
 }
 
-func (f *Firebase) RunTransaction(ctx context.Context, cb func(tr *firestore.Transaction, privileged map[string]any) error) error {
+func (f *Firebase) RunTransaction(
+	ctx context.Context,
+	cb func(tr *firestore.Transaction, privileged map[string]any) error,
+) error {
 	ctx, cancelF := context.WithCancel(ctx)
 	window.ShowProgress(ctx, cancelF)
 	return f.cFs.RunTransaction(ctx, func(ctx context.Context, tr *firestore.Transaction) error {
@@ -212,7 +215,6 @@ func Search(searchKey, searchValue string) error {
 		global.CrntUsers = append(global.CrntUsers, newUser)
 		return nil
 	})
-
 	if err != nil {
 		return fmt.Errorf(lang.ErrSearch, err)
 	}
@@ -398,19 +400,17 @@ func (f *Firebase) DoList() error {
 
 	window.ShowProgress(ctx, cancel)
 
-	go func() {
-		defer cancel()
-		if err := f.doList(ctx); err != nil {
-			window.ShowErrorBuffer(err)
-			return
-		}
-		if len(global.CrntUsers) == 0 {
-			window.ShowErrorBuffer(fmt.Errorf("%s %s", lang.ErrNoUsersS, lang.WarnMayRefresh))
-			return
-		}
+	defer cancel()
 
-		common.Fe.LayoutUsers()
-	}()
+	if err := f.doList(ctx); err != nil {
+		return err
+	}
+
+	if len(global.CrntUsers) == 0 {
+		return fmt.Errorf("%s %s", lang.ErrNoUsersS, lang.WarnMayRefresh)
+	}
+
+	common.Fe.LayoutUsers()
 
 	return nil
 }

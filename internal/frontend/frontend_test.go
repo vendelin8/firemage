@@ -712,6 +712,10 @@ func TestClaimsRadioSetOnSetValue(t *testing.T) {
 			// Setup mocks
 			mockFe.EXPECT().ClaimsDateSetDisabled(tt.wantDisabled).Times(1)
 
+			// ClaimsBtns is called with true for active/inactive, false for timed
+			shouldDisableBtns := tt.radioValue != claimTimed
+			mockFe.EXPECT().ClaimsBtns(shouldDisableBtns).Times(1)
+
 			// For timed claims, claimsRadioSetOnSetValue always calls ClaimsDate()
 			// to check if it's nil and set current time if needed
 			if tt.radioValue == claimTimed {

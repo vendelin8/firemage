@@ -22,10 +22,7 @@ func TestShowPage(t *testing.T) {
 			savedUsers     map[string][]string
 			crntUsers      []string
 			actions        map[string]map[string]any
-			expectShowMsg  bool
-			expectSetPage  bool
-			expectLayout   bool
-			wantErr        string
+			wantErr        error
 			wantUsers      []string
 			wantSavedUsers map[string][]string
 		}{
@@ -33,9 +30,7 @@ func TestShowPage(t *testing.T) {
 				name:           "same page returns without changes",
 				currentPage:    lang.PageSearch,
 				newPage:        lang.PageSearch,
-				expectShowMsg:  false,
-				expectSetPage:  false,
-				expectLayout:   false,
+				wantErr:        nil,
 				wantSavedUsers: map[string][]string{},
 			},
 			{
@@ -46,12 +41,10 @@ func TestShowPage(t *testing.T) {
 					lang.PageSearch: {"user1", "user2"},
 					lang.PageList:   {"user3", "user4"},
 				},
-				crntUsers:     []string{"current_search_users"},
-				actions:       map[string]map[string]any{},
-				expectShowMsg: false,
-				expectSetPage: true,
-				expectLayout:  true,
-				wantUsers:     []string{"user3", "user4"},
+				crntUsers: []string{"current_search_users"},
+				actions:   map[string]map[string]any{},
+				wantErr:   nil,
+				wantUsers: []string{"user3", "user4"},
 				wantSavedUsers: map[string][]string{
 					lang.PageSearch: {"current_search_users"},
 					lang.PageList:   {"user3", "user4"},
@@ -64,26 +57,22 @@ func TestShowPage(t *testing.T) {
 				savedUsers: map[string][]string{
 					lang.PageList: {"user1"},
 				},
-				crntUsers:     []string{},
-				actions:       map[string]map[string]any{},
-				expectShowMsg: false,
-				expectSetPage: true,
-				expectLayout:  true,
-				wantUsers:     []string{},
+				crntUsers: []string{},
+				actions:   map[string]map[string]any{},
+				wantErr:   nil,
+				wantUsers: []string{},
 				wantSavedUsers: map[string][]string{
 					lang.PageList: {}},
 			},
 			{
-				name:          "save users to old page on transition",
-				currentPage:   lang.PageList,
-				newPage:       lang.PageSearch,
-				savedUsers:    map[string][]string{},
-				crntUsers:     []string{"user1", "user2", "user3"},
-				actions:       map[string]map[string]any{},
-				expectShowMsg: false,
-				expectSetPage: true,
-				expectLayout:  true,
-				wantUsers:     []string{},
+				name:        "save users to old page on transition",
+				currentPage: lang.PageList,
+				newPage:     lang.PageSearch,
+				savedUsers:  map[string][]string{},
+				crntUsers:   []string{"user1", "user2", "user3"},
+				actions:     map[string]map[string]any{},
+				wantErr:     nil,
+				wantUsers:   []string{},
 				wantSavedUsers: map[string][]string{
 					lang.PageList: {"user1", "user2", "user3"},
 				},
@@ -95,12 +84,10 @@ func TestShowPage(t *testing.T) {
 				savedUsers: map[string][]string{
 					lang.PageList: {"user1"},
 				},
-				crntUsers:     []string{},
-				actions:       map[string]map[string]any{"uid1": {"admin": true}},
-				expectShowMsg: true,
-				expectSetPage: true,
-				expectLayout:  true,
-				wantUsers:     []string{"user1"},
+				crntUsers: []string{},
+				actions:   map[string]map[string]any{"uid1": {"admin": true}},
+				wantErr:   nil,
+				wantUsers: []string{"user1"},
 				wantSavedUsers: map[string][]string{
 					lang.PageSearch: {},
 					lang.PageList:   {"user1"},
@@ -113,30 +100,24 @@ func TestShowPage(t *testing.T) {
 				savedUsers: map[string][]string{
 					lang.PageList: {"user1"},
 				},
-				crntUsers:     []string{},
-				actions:       map[string]map[string]any{},
-				expectShowMsg: false,
-				expectSetPage: true,
-				expectLayout:  true,
-				wantErr:       "",
-				wantUsers:     []string{"user1"},
+				crntUsers: []string{},
+				actions:   map[string]map[string]any{},
+				wantErr:   nil,
+				wantUsers: []string{"user1"},
 				wantSavedUsers: map[string][]string{
 					lang.PageSearch: {},
 					lang.PageList:   {"user1"},
 				},
 			},
 			{
-				name:          "error when no users loaded from list page",
-				currentPage:   lang.PageSearch,
-				newPage:       lang.PageList,
-				savedUsers:    map[string][]string{},
-				crntUsers:     []string{},
-				actions:       map[string]map[string]any{},
-				expectShowMsg: false,
-				expectSetPage: true,
-				expectLayout:  false,
-				wantErr:       lang.ErrNoUsersS,
-				wantUsers:     []string{},
+				name:        "error when DoList fails",
+				currentPage: lang.PageSearch,
+				newPage:     lang.PageList,
+				savedUsers:  map[string][]string{},
+				crntUsers:   []string{},
+				actions:     map[string]map[string]any{},
+				wantErr:     testutil.ErrMock,
+				wantUsers:   []string{},
 				wantSavedUsers: map[string][]string{
 					lang.PageSearch: {},
 				},
@@ -163,18 +144,20 @@ func TestShowPage(t *testing.T) {
 
 				// Setup mock expectations
 				if tt.currentPage != tt.newPage {
-					if tt.expectSetPage {
-						mockFe.EXPECT().SetPage(tt.newPage).Times(1)
-					}
-					if tt.expectShowMsg {
-						mockFe.EXPECT().ShowMsg(gomock.Any()).Times(1)
-					}
-					if tt.expectLayout {
-						mockFe.EXPECT().LayoutUsers().Times(1)
-					}
+					mockFe.EXPECT().SetPage(tt.newPage).Times(1)
+
 					// Mock DoList when switching to list page with no cached users
-					if tt.newPage == lang.PageList && len(tt.savedUsers[lang.PageList]) == 0 {
-						mockFb.EXPECT().DoList().Return(nil).Times(1)
+					doListNeeded := tt.newPage == lang.PageList && len(tt.savedUsers[lang.PageList]) == 0
+					if doListNeeded {
+						mockFb.EXPECT().DoList().Return(tt.wantErr).Times(1)
+					}
+
+					// Only expect these if DoList succeeds or is not needed
+					if !doListNeeded || tt.wantErr == nil {
+						if len(tt.actions) > 0 {
+							mockFe.EXPECT().ShowMsg(gomock.Any()).Times(1)
+						}
+						mockFe.EXPECT().LayoutUsers().Times(1)
 					}
 				}
 
@@ -182,11 +165,7 @@ func TestShowPage(t *testing.T) {
 				err := ShowPage(tt.newPage)
 
 				// Assert
-				if len(tt.wantErr) > 0 {
-					assert.Contains(t, err.Error(), tt.wantErr)
-				} else {
-					assert.NoError(t, err)
-				}
+				assert.Equal(t, tt.wantErr, err)
 				assert.Equal(t, tt.wantUsers, global.CrntUsers)
 				if tt.currentPage != tt.newPage {
 					assert.Equal(t, tt.wantSavedUsers, global.SavedUsers)

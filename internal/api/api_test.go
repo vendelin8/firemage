@@ -63,38 +63,35 @@ func TestRefresh(t *testing.T) {
 	defer cleanup()
 
 	tests := []struct {
-		name                string
-		setupUsers          []string
-		setupActions        map[string]map[string]any
-		wantCurrentPage     string
-		shouldCallDoRefresh bool
-		wantError           bool
+		name            string
+		setupUsers      []string
+		setupActions    map[string]map[string]any
+		wantCurrentPage string
+		wantError       error
 	}{
 		{
-			name:                "refresh on list page with users and no actions",
-			setupUsers:          []string{"uid1", "uid2"},
-			wantCurrentPage:     lang.PageList,
-			shouldCallDoRefresh: true,
-			wantError:           true,
+			name:            "refresh on list page with users and no actions",
+			setupUsers:      []string{"uid1", "uid2"},
+			wantCurrentPage: lang.PageList,
+			wantError:       nil,
 		},
 		{
 			name:            "refresh not on list page",
 			setupUsers:      []string{"uid1"},
 			wantCurrentPage: lang.PageSearch,
-			wantError:       true,
+			wantError:       ErrCantRefresh,
 		},
 		{
 			name:            "refresh with pending actions",
 			setupUsers:      []string{"uid1"},
 			setupActions:    map[string]map[string]any{"uid1": {"admin": true}},
 			wantCurrentPage: lang.PageList,
-			wantError:       true,
+			wantError:       ErrActions,
 		},
 		{
-			name:                "refresh with no users",
-			wantCurrentPage:     lang.PageList,
-			shouldCallDoRefresh: true,
-			wantError:           true,
+			name:            "refresh with no users",
+			wantCurrentPage: lang.PageList,
+			wantError:       nil,
 		},
 	}
 
@@ -110,21 +107,20 @@ func TestRefresh(t *testing.T) {
 			common.Fb = mockFb
 
 			mockFe.EXPECT().CurrentPage().Return(tt.wantCurrentPage).Times(1)
-			if tt.shouldCallDoRefresh {
+
+			if tt.wantError == nil {
 				mockFb.EXPECT().RunTransaction(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+				if len(tt.setupUsers) == 0 {
+					mockFe.EXPECT().ShowMsg(gomock.Any()).Times(1)
+				}
 			}
 
 			global.CrntUsers = tt.setupUsers
 			global.Actions = testutil.BuildActionsMap(tt.setupActions)
 
 			err := refresh()
-
-			if tt.wantError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-
+			assert.Equal(t, tt.wantError, err)
 			global.Actions = map[string]common.ClaimsMap{}
 		})
 	}

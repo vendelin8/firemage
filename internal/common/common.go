@@ -11,6 +11,8 @@ import (
 	"github.com/vendelin8/firemage/internal/lang"
 )
 
+const d1 = time.Hour * 24
+
 var (
 	ErrNoUsers      = errors.New(lang.ErrNoUsersS)
 	ErrWrongDBClaim = errors.New(lang.ErrWrongDBClaimS)
@@ -98,15 +100,11 @@ func (c *Claim) String() string {
 }
 
 func (c *Claim) Differs(d *Claim) bool {
-	if c.Checked != d.Checked {
+	if c.Checked != d.Checked || (c.Date == nil) != (d.Date == nil) {
 		return true
 	}
 
-	if c.Date == nil {
-		return d.Date != nil
-	}
-
-	return d.Date == nil || *c.Date != *d.Date
+	return d.Date != nil && !c.Date.Truncate(d1).Equal(d.Date.Truncate(d1))
 }
 
 func (c *Claim) DiffersType(d *Claim) bool {

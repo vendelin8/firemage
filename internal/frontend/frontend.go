@@ -326,11 +326,7 @@ func (f *Frontend) ShowClaimChoser(c common.Claim, onOK func(c common.Claim)) {
 func (f *Frontend) ShowProgress(ctx context.Context, cancelF context.CancelFunc, ms ...string) {
 	go func() {
 		<-ctx.Done()
-		f.app.QueueUpdate(func() {
-			window.HidePopup(lang.PopupProgress)
-			f.app.ForceDraw()
-		})
-		f.app.Draw()
+		window.HidePopup(lang.PopupProgress)
 	}()
 
 	var m string
@@ -342,11 +338,12 @@ func (f *Frontend) ShowProgress(ctx context.Context, cancelF context.CancelFunc,
 
 	if f.progress != nil {
 		f.pages.ShowPage(lang.PopupProgress)
-		// f.app.SetFocus(f.progress.SetFocus(0))
 		f.progress.SetDoneFunc(func(_ int, _ string) {
 			cancelF()
 		})
 		f.progress.SetText(m)
+		f.app.ForceDraw()
+
 		return
 	}
 
@@ -356,6 +353,7 @@ func (f *Frontend) ShowProgress(ctx context.Context, cancelF context.CancelFunc,
 		})
 	f.pages.AddPage(lang.PopupProgress, f.progress, true, true)
 	f.progress.SetText(m)
+	f.app.ForceDraw()
 }
 
 // HidePopup hides the current popup window.
