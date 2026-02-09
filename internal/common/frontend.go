@@ -1,4 +1,4 @@
-//go:generate go tool go.uber.org/mock/mockgen -package=mock -source=./frontend.go -destination=../mock/mock_frontend.go
+//go:generate mockgen -package=mock -source=./frontend.go -destination=../mock/mock_frontend.go
 package common
 
 import (
