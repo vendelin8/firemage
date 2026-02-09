@@ -1,4 +1,4 @@
-//go:generate go tool go.uber.org/mock/mockgen -package=mock -source=./firebase.go -destination=../mock/mock_firebase.go
+//go:generate mockgen -package=mock -source=./firebase.go -destination=../mock/mock_firebase.go
 package common
 
 import (

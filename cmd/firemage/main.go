@@ -20,8 +20,9 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	cobra.MousetrapHelpText = ""
 	rootCmd.Flags().StringVarP(&conf.KeyPath, "key", "k", "service-account.json", lang.DescKey)
-	rootCmd.Flags().StringVarP(&conf.ConfPath, "conf", "c", "conf.yaml", lang.DescConf)
+	rootCmd.Flags().StringVarP(&conf.ConfPath, "conf", "c", "conf.yml", lang.DescConf)
 	rootCmd.Flags().StringVarP(&log.LogPath, "log", "l", "log.txt", lang.DescLog)
 	rootCmd.Flags().BoolVarP(&log.Verbose, "verbose", "v", false, lang.DescDebug)
 	rootCmd.Flags().BoolVarP(&conf.UseEmu, "emulator", "e", false, lang.DescEmul)

@@ -46,6 +46,7 @@ tasks:
       - '{{.OUTDIR}}'
     status:
       - test -f {{.OUTDIR}}
+    cmd: mkdir -p {{.OUTDIR}}
 
   deps:
     sources:
@@ -162,7 +163,12 @@ tasks:
         vars:
           SUFFIX: '-coverprofile={{.COVER}}'
       - go tool cover -o {{.COVERHTML}} -html={{.COVER}}
-      - go tool cover -func={{.COVER}} | rg total
+      - go tool cover -func={{.COVER}} | grep total
+
+  covershow:
+    desc: Shows the test coverage report in the browser.
+    deps: [cover]
+    cmds:
       - task: _os:sed
         vars:
           FROM: black

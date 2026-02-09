@@ -18,7 +18,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: [1.19.x]
+        go-version: [1.25.x]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
 
@@ -60,16 +60,14 @@ jobs:
       - name: Lints all code with golangci-lint
         run: task lint
 
-      - name: Runs all tests
-        run: |
-          task test
-          go tool cover -func=coverage.out -o=coverage.out
+      - name: Runs all tests and calculate coverage
+        run: task cover COVER=coverage.out
 
       - name: Go report
         uses: creekorful/goreportcard-action@v1.0
 
       - name: Go Coverage Badge  # Pass the `coverage.out` output to this action
-        uses: tj-actions/coverage-badge-go@v2
+        uses: tj-actions/coverage-badge-go@v3
         with:
           filename: coverage.out
           green: 60
