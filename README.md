@@ -1,5 +1,5 @@
 ## Firemage
-![Coverage](https://img.shields.io/badge/Coverage-60.3%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-0-red)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vendelin8/firemage)](https://goreportcard.com/report/github.com/vendelin8/firemage)
 
 firemage is a CLI tool to manage Firebase Auth Claims, written in Golang
