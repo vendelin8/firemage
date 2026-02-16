@@ -266,14 +266,13 @@ func setPermissions(r *auth.UserRecord, d common.ClaimsMap) error {
 		return fmt.Errorf("store auth claims: %w", err)
 	}
 
-	claims, err := common.NewClaimsMapFrom(r.CustomClaims)
+	claims, err := common.NewClaimsMapFrom(newClaims)
 	if err != nil {
 		return fmt.Errorf("map auth claims %s => %w", d, err)
 	}
 
 	u := global.LocalUsers[r.UID]
 	u.Claims = *claims
-
 	global.LocalUsers[r.UID] = u
 
 	return nil

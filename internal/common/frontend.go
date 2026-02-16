@@ -22,7 +22,7 @@ type FeIf interface {
 	LayoutUsers()
 	Quit()
 
-	ShowClaimChoser(c Claim, onOK func(Claim))
+	ShowClaimChoser(i int, key string, c Claim)
 	CreateClaimChoser()
 	ClaimsDateSetDisabled(bool)
 	ClaimsBtns(bool)

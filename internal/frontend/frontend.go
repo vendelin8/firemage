@@ -10,6 +10,7 @@ import (
 	"github.com/vendelin8/firemage/internal/common"
 	"github.com/vendelin8/firemage/internal/conf"
 	"github.com/vendelin8/firemage/internal/frontend/window"
+	"github.com/vendelin8/firemage/internal/global"
 	"github.com/vendelin8/firemage/internal/lang"
 	"github.com/vendelin8/firemage/internal/log"
 	"github.com/vendelin8/firemage/internal/util"
@@ -29,7 +30,8 @@ type ClaimsModal struct {
 	*tview.FormModal
 	radio *tview.Radio
 	date  *tview.InputField
-	onOK  func(c common.Claim)
+	i     int
+	key   string
 }
 
 type Frontend struct {
@@ -233,21 +235,49 @@ func (c *ClaimsModal) handleOK() {
 	window.HidePopup(lang.PopupClaim)
 }
 
+func (c *ClaimsModal) resetToOriginal() {
+	uid := global.CrntUsers[c.i]
+	savedClaim := global.LocalUsers[uid].Claims[c.key]
+
+	if savedClaim == nil {
+		log.Lgr.Warn("no claim found for user", zap.String("uid", uid), zap.String("key", c.key))
+		savedClaim = &common.Claim{}
+	}
+
+	var claimType int
+	var dateStr string
+
+	if savedClaim.Date != nil {
+		claimType = ClaimTimed
+		dateStr = savedClaim.Date.Format(common.DateFormat)
+	} else if savedClaim.Checked {
+		claimType = ClaimActive
+		dateStr = time.Now().Format(common.DateFormat)
+	} else {
+		claimType = ClaimInactive
+		dateStr = time.Now().Format(common.DateFormat)
+	}
+
+	c.date.SetText(dateStr)
+	c.radio.SetValue(claimType)
+	log.Lgr.Debug("resetToOriginal", zap.String("uid", uid), zap.String("key", c.key), zap.Int("claimType", claimType), zap.String("dateStr", dateStr), zap.Any("savedClaim", savedClaim))
+}
+
 func (c *ClaimsModal) processClaimResult() {
 	log.Lgr.Debug("processClaimResult", zap.Int("radio", c.radio.Value()))
 	switch c.radio.Value() {
 	case claimActive:
-		c.onOK(common.Claim{Checked: true})
+		onActionChange(c.i, c.key, common.Claim{Checked: true})
 	case claimInactive:
-		c.onOK(common.Claim{})
+		onActionChange(c.i, c.key, common.Claim{})
 	case claimTimed:
 		d, err := time.Parse(common.DateFormat, c.date.GetText())
 		if err != nil {
 			log.Lgr.Error("claim date parse", zap.Error(err))
-			c.onOK(common.Claim{Checked: false})
+			onActionChange(c.i, c.key, common.Claim{})
 			return
 		}
-		c.onOK(common.Claim{Date: &d})
+		onActionChange(c.i, c.key, common.Claim{Date: &d})
 	}
 }
 
@@ -267,6 +297,9 @@ func (f *Frontend) CreateClaimChoser() {
 		}
 		form.AddButton(ok, func() {
 			c.handleOK()
+		})
+		form.AddButton(lang.SReset, func() {
+			c.resetToOriginal()
 		})
 		form.AddButton(lang.SCancel, func() {
 			window.HidePopup(lang.PopupClaim)
@@ -290,7 +323,7 @@ func (c *ClaimsModal) incDate(buttonLabel string) {
 }
 
 // ShowClaimChoser shows a claim chooser dialog with options for active, inactive, or timed claims.
-func (f *Frontend) ShowClaimChoser(c common.Claim, onOK func(c common.Claim)) {
+func (f *Frontend) ShowClaimChoser(i int, key string, c common.Claim) {
 	var (
 		claimType int
 		dateStr   string
@@ -314,7 +347,8 @@ func (f *Frontend) ShowClaimChoser(c common.Claim, onOK func(c common.Claim)) {
 	// f.app.SetFocus(claims.SetFocus(0))
 	radio := f.claims.radio
 	radio.SetValue(claimType)
-	claims.onOK = onOK
+	claims.i = i
+	claims.key = key
 	radio.SetValue(claimTimed)
 
 	if !creating {

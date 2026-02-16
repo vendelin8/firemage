@@ -39,10 +39,7 @@ func (f *Frontend) initUsersList() {
 // a dialog to change value to true or a given date.
 func activatePopup(i int, key string, c common.Claim) {
 	window.PushPopup(lang.PopupClaim)
-	common.Fe.ShowClaimChoser(c, func(c common.Claim) {
-		log.Lgr.Debug("activatePopup done", zap.Int("i", i), zap.String("key", key), zap.Stringer("claim", &c))
-		onActionChange(i, key, c)
-	})
+	common.Fe.ShowClaimChoser(i, key, c)
 }
 
 // tableCB returns a checkbox or date text to the claim table filled with the saved value.

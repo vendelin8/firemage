@@ -4,6 +4,7 @@ const (
 	MenuRefresh = "Refresh"
 	MenuSave    = "Save"
 	SCancel     = "Cancel"
+	SReset      = "Reset"
 	MenuQuit    = "Quit"
 	ShortDesc   = "Firebase auth admin"
 	LongDesc    = "firemage is a CLI tool to manage Firebase Auth Claims, written in Golang"

@@ -4,6 +4,7 @@ const (
 	MenuRefresh = "Frissít"
 	MenuSave    = "Ment"
 	SCancel     = "Mégse"
+	SReset      = "Visszaállít"
 	MenuQuit    = "Kilép"
 	ShortDesc   = "Firebase jogosultságkezelő"
 	LongDesc    = "firemage egy Go nyelven készült Firebase jogosultságokat kezelő terminál alkalmazás"

@@ -10,6 +10,7 @@ import (
 	"github.com/vendelin8/firemage/internal/common"
 	"github.com/vendelin8/firemage/internal/conf"
 	"github.com/vendelin8/firemage/internal/frontend/window"
+	"github.com/vendelin8/firemage/internal/global"
 	"github.com/vendelin8/firemage/internal/lang"
 	"github.com/vendelin8/firemage/internal/mock"
 	"github.com/vendelin8/firemage/internal/util"
@@ -596,34 +597,44 @@ func TestClaimsModalProcessClaimResult(t *testing.T) {
 
 	tests := []struct {
 		name       string
+		i          int
+		key        string
 		radioValue int
 		dateText   string
 		wantActive bool
 		wantDate   *time.Time
 	}{
 		{
-			name:       "claim active calls onOK with true and nil date",
+			name:       "claim active calls onActionChange with true and nil date",
+			i:          0,
+			key:        "test_key",
 			radioValue: claimActive,
 			dateText:   "",
 			wantActive: true,
 			wantDate:   nil,
 		},
 		{
-			name:       "claim inactive calls onOK with false and nil date",
+			name:       "claim inactive calls onActionChange with false and nil date",
+			i:          1,
+			key:        "another_key",
 			radioValue: claimInactive,
 			dateText:   "",
 			wantActive: false,
 			wantDate:   nil,
 		},
 		{
-			name:       "claim timed calls onOK with false and parsed date",
+			name:       "claim timed calls onActionChange with false and parsed date",
+			i:          2,
+			key:        "timed_key",
 			radioValue: claimTimed,
 			dateText:   validDateStr,
 			wantActive: false,
 			wantDate:   &validDate,
 		},
 		{
-			name:       "claim timed with invalid date calls onOK with false and nil date",
+			name:       "claim timed with invalid date calls onActionChange with false and nil date",
+			i:          3,
+			key:        "invalid_key",
 			radioValue: claimTimed,
 			dateText:   "invalid-date",
 			wantActive: false,
@@ -633,10 +644,28 @@ func TestClaimsModalProcessClaimResult(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create callback tracking variables
-			okCalled := false
-			var callbackActive bool
-			var callbackDate *time.Time
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockFe := mock.NewMockFeIf(ctrl)
+			common.Fe = mockFe
+			mockFe.EXPECT().ReplaceTableItem(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+			// Setup global state for onActionChange
+			uid := "test_user"
+			// Need at least tt.i + 1 users in CrntUsers
+			global.CrntUsers = make([]string, tt.i+1)
+			global.CrntUsers[tt.i] = uid
+			global.LocalUsers = map[string]*global.User{
+				uid: {
+					UID:    uid,
+					Email:  "user@test.com",
+					Name:   "Test User",
+					Claims: make(common.ClaimsMap),
+				},
+			}
+			global.Actions = make(map[string]common.ClaimsMap)
+			global.Actions[uid] = make(common.ClaimsMap)
 
 			// Create radio with proper options
 			radio := tview.NewRadio(lang.SActive, lang.SInactive, lang.STimed)
@@ -647,20 +676,28 @@ func TestClaimsModalProcessClaimResult(t *testing.T) {
 			c := &ClaimsModal{
 				radio: radio,
 				date:  dateField,
-				onOK: func(claim common.Claim) {
-					okCalled = true
-					callbackActive = claim.Checked
-					callbackDate = claim.Date
-				},
+				i:     tt.i,
+				key:   tt.key,
 			}
 
 			// Call processClaimResult
 			c.processClaimResult()
 
-			// Verify onOK was called
-			assert.True(t, okCalled, "onOK callback should be called")
-			assert.Equal(t, tt.wantActive, callbackActive, "active flag should match")
-			assert.Equal(t, tt.wantDate, callbackDate, "date should match")
+			// Verify that onActionChange was called by checking global.Actions
+			actualClaim, exists := global.Actions[uid][tt.key]
+			assert.True(t, exists, "claim should exist in global.Actions")
+
+			// Construct expected claim based on radio value
+			expectedClaim := common.Claim{}
+			if tt.radioValue == claimActive {
+				expectedClaim.Checked = true
+			} else if tt.radioValue == claimTimed && tt.wantDate != nil {
+				expectedClaim.Date = tt.wantDate
+			}
+
+			// Verify the actual claim that was set by onActionChange
+			assert.Equal(t, expectedClaim.Checked, actualClaim.Checked, "active flag should match")
+			assert.Equal(t, expectedClaim.Date, actualClaim.Date, "date should match")
 		})
 	}
 }
@@ -777,6 +814,8 @@ func TestClaimsModalIncDate(t *testing.T) {
 			c := &ClaimsModal{
 				radio: radio,
 				date:  tview.NewInputField(),
+				i:     0,
+				key:   "test_key",
 			}
 
 			// Mock ClaimsDate to return the current date or nil

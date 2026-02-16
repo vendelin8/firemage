@@ -14,7 +14,7 @@ import (
 func fixedUserClaims(u *global.User) common.ClaimsMap {
 	claims := u.Claims
 	if ac, ok := global.Actions[u.UID]; ok {
-		log.Lgr.Debug("Applying user actions", zap.String("uid", u.UID), zap.Any("actions", ac))
+		log.Lgr.Debug("fixedUserClaims", zap.String("uid", u.UID), zap.Any("actions", ac))
 		claims = maps.Clone(u.Claims)
 		maps.Copy(claims, ac)
 	}

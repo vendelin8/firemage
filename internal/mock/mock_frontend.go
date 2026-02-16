@@ -216,15 +216,15 @@ func (mr *MockFeIfMockRecorder) SetPage(arg0 any) *gomock.Call {
 }
 
 // ShowClaimChoser mocks base method.
-func (m *MockFeIf) ShowClaimChoser(c common.Claim, onOK func(common.Claim)) {
+func (m *MockFeIf) ShowClaimChoser(i int, key string, c common.Claim) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ShowClaimChoser", c, onOK)
+	m.ctrl.Call(m, "ShowClaimChoser", i, key, c)
 }
 
 // ShowClaimChoser indicates an expected call of ShowClaimChoser.
-func (mr *MockFeIfMockRecorder) ShowClaimChoser(c, onOK any) *gomock.Call {
+func (mr *MockFeIfMockRecorder) ShowClaimChoser(i, key, c any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShowClaimChoser", reflect.TypeOf((*MockFeIf)(nil).ShowClaimChoser), c, onOK)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShowClaimChoser", reflect.TypeOf((*MockFeIf)(nil).ShowClaimChoser), i, key, c)
 }
 
 // ShowConfirm mocks base method.
